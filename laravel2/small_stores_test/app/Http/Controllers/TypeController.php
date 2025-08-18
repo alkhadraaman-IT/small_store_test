@@ -45,4 +45,14 @@ public function destroy($id) {
     // حذف بيانات
 }
 
+public function getByClassId($class_id) {
+        $types = Type::where('class_id', $class_id)->get();
+
+        if ($types->isEmpty()) {
+            return response()->json(['message' => 'لا يوجد أنواع لهذا الـ class_id'], 404);
+        }
+
+        return response()->json($types);
+    }
+
 }
