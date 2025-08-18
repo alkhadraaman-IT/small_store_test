@@ -29,9 +29,9 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  // Helper method for PUT requests
-  Future<dynamic> put(String endpoint, dynamic body) async {
-    final response = await client.put(
+  // Helper method for patch requests
+  Future<dynamic> patch(String endpoint, dynamic body) async {
+    final response = await client.patch(
       Uri.parse('$baseUrl/$endpoint'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),

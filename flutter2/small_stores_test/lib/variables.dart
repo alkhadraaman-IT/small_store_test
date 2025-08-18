@@ -13,7 +13,7 @@ String a_store_class_s='فئة المتجر ';
 String a_product_name_s='اسم المنتج ';
 String a_product_note_s='لمحة عن المنتج ';
 String a_product_type_s='نوع المنتج ';
-String a_product_monye_s='سعر المنتج ';
+String a_product_monye_s=' سعر المنتج بالدولار';
 String a_product_stati_s='حالة المنتج ';
 
 //login
@@ -118,7 +118,9 @@ String a_edit_b='تعديل ';
 String app_name='name_app';
 
 //الصور
-var image_logo_s=Image.asset('assets/images/img_1.png',height: 32,width: 32,);
+var image_logo_s=Image.asset('assets/images/img_5.png',height: 30,width: 30,);
+var image_logo_w=Image.asset('assets/images/img_4.png',height: 60,);
 var image_login=Image.asset('assets/images/img.png',height: 250);
-var image_logo_b=Image.asset('assets/images/img_2.png',height: 40,);
+var image_logo_b=Image.asset('assets/images/img_5.png',height: 160,);
 var image_user=Image.asset('assets/images/img_3.png',height: 60);
+const String image_user_path = 'assets/images/img_3.png';

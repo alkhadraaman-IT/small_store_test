@@ -2,7 +2,7 @@ class Favorit {
   final int id;
   final int user_id ;
   final int product_id  ;
-  final bool state ;
+  final int state ;
 
   Favorit({
     required this.id,
@@ -15,9 +15,9 @@ class Favorit {
   factory Favorit.fromJson(Map<String, dynamic> json) {
     return Favorit(
       id: json['id'],
-      user_id : json['user_id '],
-      product_id  : json['product_id  '],
-      state : json['state '],
+      user_id : json['user_id'],
+      product_id  : json['product_id'],
+      state : json['state'],
     );
   }
 

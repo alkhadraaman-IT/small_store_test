@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:small_stores_test/models/storemodel.dart';
 import 'package:small_stores_test/product.dart';
 import 'package:image_picker/image_picker.dart';
 import 'apiService/api_service.dart';
@@ -9,11 +10,17 @@ import 'apiService/type_api.dart';
 import 'appbar.dart';
 import 'drawer.dart';
 import 'models/typemodel.dart';
+import 'models/usermodel.dart';
 import 'store.dart';
 import 'style.dart';
 import 'variables.dart';
 
 class AddProduct extends StatefulWidget {
+  final User user; // إضافة المتغير
+  final StoreModel store; // إضافة المتغير
+
+  const AddProduct({super.key, required this.user, required this.store});
+
   @override
   _AddProduct createState() => _AddProduct();
 }
@@ -38,7 +45,7 @@ class _AddProduct extends State<AddProduct> {
 
   Future<void> fetchTypes() async {
     final typeApi = TypeApi(apiService: ApiService(client: http.Client()));
-    final fetchedTypes = await typeApi.getTypes();
+    final fetchedTypes = await typeApi.getTypeClasses(widget.store.class_id);
     setState(() {
       _types = fetchedTypes;
     });
@@ -71,7 +78,7 @@ class _AddProduct extends State<AddProduct> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(),
-      drawer: CustomDrawer(),
+      drawer: CustomDrawer(user: widget.user,),
       body: SingleChildScrollView(
         child: Center(
           child: Padding(
@@ -104,19 +111,25 @@ class _AddProduct extends State<AddProduct> {
                   SizedBox(height: 16),
                   DropdownButtonFormField<ProductType>(
                     value: _selectedType,
+                    decoration: InputDecoration(
+                      labelText: 'نوع المنتج',
+                      prefixIcon: Icon(Icons.category),
+                    ),
                     items: _types.map((type) {
                       return DropdownMenuItem<ProductType>(
                         value: type,
                         child: Text(type.type_name),
                       );
                     }).toList(),
-                    onChanged: (value) {
+                    onChanged: (newType) {
                       setState(() {
-                        _selectedType = value;
+                        _selectedType = newType;
                       });
                     },
                     validator: (value) {
-                      if (value == null) return 'اختر نوع المنتج';
+                      if (value == null) {
+                        return 'يرجى اختيار نوع المنتج';
+                      }
                       return null;
                     },
                   ),
@@ -208,7 +221,7 @@ class _AddProduct extends State<AddProduct> {
                                 apiService: ApiService(client: http.Client()));
                             // أرسل البيانات
                             await productApi.addProduct(
-                              store_id: 1, // عدّل حسب التطبيق
+                              store_id: widget.store.id, // عدّل حسب التطبيق
                               product_name: _productNameController.text,
                               type_id: _selectedType!.id,
                               product_description: _productNoteController.text,
@@ -217,12 +230,17 @@ class _AddProduct extends State<AddProduct> {
                               _productAvailable ? 1 : 0, // تحويل القيمة هنا
                               product_photo_1: _productImageController.text,
                             );
+
+                            _productNameController.clear();
+                            _productTypeController.clear();
+                            _productPriceController.clear();
+                            _productStaiteController.clear();
+                            _productNoteController.clear();
+                            _productImageController.clear();
+
                             ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("تم إضافة المنتج بنجاح")));
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => Store()),
-                            );
+
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("فشل الإضافة: $e")));

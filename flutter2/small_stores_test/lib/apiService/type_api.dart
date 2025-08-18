@@ -18,6 +18,12 @@ class TypeApi {
     return (data as List).map((type) => ProductType .fromJson(type)).toList();
   }
 
+  // عرض جميع المستخدمين
+  Future<List<ProductType >> getTypeClasses(int id) async {
+    final data = await apiService.get('types/view/class/$id');
+    return (data as List).map((type) => ProductType .fromJson(type)).toList();
+  }
+
   // إضافة مستخدم جديد
   Future<ProductType > addType(ProductType  type) async {
     final data = await apiService.post('types', type.toJson());
@@ -26,12 +32,12 @@ class TypeApi {
 
   // تعديل مستخدم
   Future<ProductType > updateType(int id, ProductType  type) async {
-    final data = await apiService.put('types/$id', type.toJson());
+    final data = await apiService.patch('types/$id', type.toJson());
     return ProductType .fromJson(data);
   }
 
   // حذف مستخدم (تعديل الحقل state)
   Future<void> deleteType(int id) async {
-    await apiService.put('types/$id/delete', {'state': 0});
+    await apiService.patch('types/$id/delete', {'state': 0});
   }
 }

@@ -4,12 +4,18 @@ import 'package:small_stores_test/addproduct.dart';
 import 'package:small_stores_test/addstore.dart';
 import 'package:small_stores_test/announcement.dart';
 import 'package:small_stores_test/editproduct.dart';
+import 'package:small_stores_test/forgotpassword.dart';
 import 'package:small_stores_test/login.dart';
+import 'package:small_stores_test/mainpageadmin.dart';
 import 'package:small_stores_test/product.dart';
+import 'package:small_stores_test/profile.dart';
+import 'package:small_stores_test/restpassword.dart';
+import 'package:small_stores_test/showmystoredata.dart';
 import 'about.dart';
 import 'editprofile.dart';
 import 'home.dart';
 import 'mainpageuser.dart';
+import 'models/usermodel.dart';
 import 'showproduct.dart';
 import 'showstore.dart';
 import 'showstoredata.dart';
@@ -26,6 +32,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final user = User(
+      name: "user6",
+      email: "user6@test.com",
+      phone: '0988311222',
+      password: "123456",
+      profile_photo: "profile1.jpg",
+      type: 0,
+      status: 1, id: 2,
+    );
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       locale: Locale('ar'),
@@ -50,7 +67,7 @@ class MyApp extends StatelessWidget {
         );
       },
 
-      home: MainPageUser(),
+      home: MainPageUser(user: user),
 
     );
   }

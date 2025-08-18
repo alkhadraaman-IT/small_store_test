@@ -8,10 +8,16 @@ import 'apiService/announcement_api.dart';
 import 'apiService/api_service.dart';
 import 'appbar.dart';
 import 'drawer.dart';
+import 'models/usermodel.dart';
 import 'style.dart';
 import 'variables.dart';
 
 class AddAnnouncement extends StatefulWidget {
+  final User user; // إضافة المتغير
+  final int store_id; // إضافة المتغير
+
+  const AddAnnouncement({super.key, required this.user, required this.store_id});
+
   @override
   _AddAnnouncement createState() => _AddAnnouncement();
 }
@@ -54,7 +60,7 @@ class _AddAnnouncement extends State<AddAnnouncement> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: CustomAppBar(),
-        drawer: CustomDrawer(),
+        drawer: CustomDrawer(user:widget.user),
         body: SingleChildScrollView(
           child: Center(
             child: Padding(
@@ -117,22 +123,24 @@ class _AddAnnouncement extends State<AddAnnouncement> {
                               if (_formKey.currentState!.validate()) {
                                 try {
                                   await announcementApi.addAnnouncement(
-                                    store_id: 1, // أو خذ store_id من المستخدم الحالي
+                                    store_id: widget.store_id, // أو خذ store_id من المستخدم الحالي
                                     announcement_description: _announcementNoteController.text,
                                     announcement_date: DateTime.now().toIso8601String(),
                                     announcement_state: true,
                                     announcement_photo: _announcementImageController.text,
                                   );
 
+                                  _announcementNoteController.clear();
+                                  _announcementImageController.clear();
 
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('تم إضافة الإعلان بنجاح!')),
                                   );
 
-                                  Navigator.push(
+                                  /*Navigator.push(
                                     context,
-                                    MaterialPageRoute(builder: (context) => Announcement()),
-                                  );
+                                    MaterialPageRoute(builder: (context) => AnnouncementScreen(user: widget.user,)),
+                                  );*/
                                 } catch (e) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('فشل في إضافة الإعلان: $e')),

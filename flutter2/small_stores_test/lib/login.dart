@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 
 import 'package:small_stores_test/createuser.dart';
+import 'package:small_stores_test/forgotpassword.dart';
 import 'package:small_stores_test/home.dart';
 import 'package:small_stores_test/mainpageuser.dart';
 import 'package:small_stores_test/variables.dart';
 
+import 'apiService/auth_service_api.dart';
+import 'mainpageadmin.dart';
+import 'models/usermodel.dart';
 import 'style.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Login extends StatefulWidget {
   @override
@@ -84,9 +89,9 @@ class _Login extends State<Login> {
                             image_login,
                             //SizedBox(height: 16),
                             //Text(app_name,style:style_name_app_o),
-                            SizedBox(height: 16),
+                            SizedBox(height: 8),
                             Text(a_login_b,style: style_text_titel),
-                            SizedBox(height: 16),
+                            SizedBox(height: 10),
                             TextFormField(
                               controller: _emailController,
                               decoration: InputDecoration(
@@ -136,31 +141,118 @@ class _Login extends State<Login> {
                                 Expanded(
                                   child: Text(a_reset_password_l),
                                 ),
+                              ],
+                            ),
+                            Column(
+                              children: [
                                 TextButton(
                                   onPressed: _authenticate,
                                   child: Text(a_reset_password_b, style: style_text_button_normal, textDirection: TextDirection.rtl),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => ForgotPasswordPage()),
+                                    );
+                                  },
+                                  child: Text("نغير كلمة المرور باستخدام البريد الإلكتروني", style: style_text_button_normal, textDirection: TextDirection.rtl),
                                 ),
                               ],
                             ),
                             SizedBox(height: 16),
                             ElevatedButton(
-                                style: style_button,
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => MainPageUser()),
+                              style: style_button,
+                              onPressed: () async {
+                                if (_formKey.currentState!.validate()) {
+                                  try {
+                                    final result = await AuthService.login(
+                                      _emailController.text.trim(),
+                                      _passWordController.text.trim(),
+                                    );
+
+                                    // التأكد من وجود المستخدم في الاستجابة
+                                    if (result.containsKey('user')) {
+                                      final user = User.fromJson(result['user']);
+
+                                      // الانتقال للواجهة الرئيسية مع تمرير الـ ID
+                                      if (user.type == 0) {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => MainPageAdmin(user: user),
+                                          ),
+                                        );
+                                      } else if (user.type == 1) {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => MainPageUser(user: user),
+                                          ),
+                                        );
+                                      } else {
+                                        // لو في نوع آخر تقدر تتعامل معه أو تعطي رسالة خطأ
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('نوع المستخدم غير معروف')),
+                                        );
+                                      }
+
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('بيانات تسجيل الدخول غير صحيحة')),
+                                      );
+                                    }
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('فشل تسجيل الدخول: $e')),
                                     );
                                   }
-                                },
-                                child: Text(a_login_b)),
+                                }
+                              },
+                              child: Text(a_login_b),
+                            ),
+
                             SizedBox(height: 16,),
                             Text(a_createuser_q_s,style: style_text_normal),
                             SizedBox(height: 16),
                             SizedBox(
                               width: MediaQuery.of(context).size.width / 3,
                               child: TextButton(
-                                onPressed: () {
+                                onPressed: () async {
+                                  final result = await AuthService.login(
+                                    _emailController.text.trim(),
+                                    _passWordController.text.trim(),
+                                  );
+
+                                  if (result.containsKey('user')) {
+                                    final user = User.fromJson(result['user']);
+
+                                    // ⬅️ خزّن التوكن + كل معلومات المستخدم
+                                    final prefs = await SharedPreferences.getInstance();
+                                    await prefs.setString('token', result['token']);
+                                    await prefs.setInt('userId', user.id);
+                                    await prefs.setString('userName', user.name);
+                                    await prefs.setString('userPhone', user.phone);
+                                    await prefs.setString('userEmail', user.email);
+                                    await prefs.setString('userPassword', user.password ?? "");
+                                    await prefs.setString('userPhoto', user.profile_photo ?? image_user_path);
+                                    await prefs.setInt('userType', user.type);
+                                    await prefs.setInt('userStatus', user.status);
+
+                                    // روح على الصفحة المناسبة
+                                    if (user.type == 0) {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => MainPageAdmin(user: user)),
+                                      );
+                                    } else {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => MainPageUser(user: user)),
+                                      );
+                                    }
+                                  }
+
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(builder: (context) => CreateUser()),

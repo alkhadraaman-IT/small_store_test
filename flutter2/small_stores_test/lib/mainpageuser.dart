@@ -6,10 +6,16 @@ import 'package:small_stores_test/home.dart';
 import 'package:small_stores_test/mystore.dart';
 import 'package:small_stores_test/style.dart';
 import 'package:small_stores_test/variables.dart';
+import 'announcementdata.dart';
 import 'drawer.dart';
+import 'models/usermodel.dart';
 import 'profile.dart';
 
 class MainPageUser extends StatefulWidget {
+  final User user;
+
+  const MainPageUser({Key? key,required this.user}) : super(key: key);
+
   @override
   _MainPageUser createState() => _MainPageUser();
 }
@@ -26,22 +32,20 @@ class _MainPageUser extends State<MainPageUser> {
     Icon(Icons.campaign, size: 30,color: Colors.white),
   ];
 
-  // قائمة الصفحات المرتبطة بالرموز
-  final List<Widget> _pages = [
-    MyStore(),
-    Home(),
-    Announcement(),
-  ];
-
-  @override
+    @override
   Widget build(BuildContext context) {
-    return Scaffold(
+      final List<Widget> pages = [
+        MyStore(user: widget.user),
+        Home(user: widget.user),
+        AnnouncementData(user: widget.user),
+      ];
+      return Scaffold(
       appBar: AppBar(
         // الشعار في اليسار (leading)
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Image.asset(
-            'assets/images/img_1.png',
+            'assets/images/img_5.png',
             height: 32,
             width: 32,
           ),
@@ -70,9 +74,9 @@ class _MainPageUser extends State<MainPageUser> {
       ),
 
 
-      drawer: CustomDrawer(),
+      drawer: CustomDrawer(user: widget.user,),
 
-      body: _pages[_selectedIndex], // عرض الصفحة الحالية بناءً على الفهرس
+      body: pages[_selectedIndex], // عرض الصفحة الحالية بناءً على الفهرس
 
       bottomNavigationBar: CurvedNavigationBar(
         key: navigationKey,

@@ -13,8 +13,8 @@ class ProductApi {
   }
 
   // عرض جميع المستخدمين
-  Future<List<ProductModel>> getProducts() async {
-    final data = await apiService.get('products');
+  Future<List<ProductModel>> getProducts(int id) async {
+    final data = await apiService.get('products/view/stores/$id');
     return (data as List).map((product) => ProductModel.fromJson(product)).toList();
   }
 
@@ -56,12 +56,12 @@ class ProductApi {
 
   // تعديل مستخدم
   Future<ProductModel> updateProduct(int id, ProductModel product) async {
-    final data = await apiService.put('poducts/$id', product.toJson());
+    final data = await apiService.patch('products/update/$id', product.toJson());
     return ProductModel.fromJson(data);
   }
 
   // حذف مستخدم (تعديل الحقل state)
   Future<void> deleteProduct(int id) async {
-    await apiService.put('products/$id/delete', {'state': 0});
+    await apiService.patch('products/delete/$id', {'state': 0});
   }
 }

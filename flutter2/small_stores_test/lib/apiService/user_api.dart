@@ -14,8 +14,14 @@ class UserApi {
 
   // عرض جميع المستخدمين
   Future<List<User>> getUsers() async {
-    final data = await apiService.get('users/view');
-    return (data as List).map((user) => User.fromJson(user)).toList();
+    try {
+      final data = await apiService.get('users/view');
+      print('API Response: $data'); // أضف هذا السطر
+      return (data as List).map((user) => User.fromJson(user)).toList();
+    } catch (e) {
+      print('Error in getUsers: $e');
+      throw Exception('Failed to load users');
+    }
   }
 /*
   // إضافة مستخدم جديد
@@ -50,12 +56,12 @@ class UserApi {
 
   // تعديل مستخدم
   Future<User> updateUser(int id, User user) async {
-    final data = await apiService.put('users/$id', user.toJson());
+    final data = await apiService.patch('users/update/$id', user.toJson());
     return User.fromJson(data);
   }
 
   // حذف مستخدم (تعديل الحقل state)
   Future<void> deleteUser(int id) async {
-    await apiService.put('users/$id/delete', {'state': 0});
+    await apiService.patch('users/delete/$id', {'state': 0});
   }
 }

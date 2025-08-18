@@ -1,23 +1,23 @@
 class StoreModel  {
   final int id;
-  final int user_id  ;
-  final String store_name   ;
-  final String store_phone  ;
-  final String store_place ;
-  final int class_id  ;
+  final int user_id;
+  final String store_name;
+  final String store_phone;
+  final String store_place;
+  final int class_id;
   final String store_description ;
-  final int store_state ;
-  final String store_photo ;
+  final int store_state;
+  final String store_photo;
 
   StoreModel ({
     required this.id,
-    required this.user_id  ,
-    required this.store_name   ,
-    required this.store_phone   ,
-    required this.store_place  ,
-    required this.class_id   ,
-    required this.store_description  ,
-    required this.store_state ,
+    required this.user_id,
+    required this.store_name,
+    required this.store_phone,
+    required this.store_place,
+    required this.class_id,
+    required this.store_description,
+    required this.store_state,
     required this.store_photo,
   });
 

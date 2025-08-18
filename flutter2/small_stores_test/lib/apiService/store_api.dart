@@ -20,6 +20,37 @@ class StoreApi {
     return (data as List).map((store) => StoreModel .fromJson(store)).toList();
   }
 
+  Future<List<StoreModel>> getStoresUser(int id) async {
+    try {
+      final response = await apiService.get('stores/view/user/$id');
+
+      if (response is Map<String, dynamic>) {
+        // التحقق من حالة الاستجابة
+        if (response['success'] == true) {
+          final data = response['data'];
+
+          if (data is List) {
+            return data.map((store) => StoreModel.fromJson(store)).toList();
+          }
+          else if (data is Map<String, dynamic>) {
+            return [StoreModel.fromJson(data)];
+          }
+          else {
+            throw Exception('تنسيق بيانات غير متوقع في حقل data');
+          }
+        }
+        else {
+          throw Exception(response['message'] ?? 'فشل جلب المتاجر');
+        }
+      }
+
+      throw Exception('تنسيق استجابة غير متوقع من الخادم');
+    } catch (e) {
+      print('Error in getStoresUser: $e');
+      throw Exception('فشل تحميل المتاجر للمستخدم $id: ${e.toString()}');
+    }
+  }
+
 
   // إضافة مستخدم جديد
   /*Future<Store> addStore(Store store) async {
@@ -55,12 +86,12 @@ class StoreApi {
 
   // تعديل مستخدم
   Future<StoreModel > updateStore(int id, StoreModel  store) async {
-    final data = await apiService.put('stores/$id', store.toJson());
+    final data = await apiService.patch('stores/update/$id', store.toJson());
     return StoreModel .fromJson(data);
   }
 
   // حذف مستخدم (تعديل الحقل state)
   Future<void> deleteStore(int id) async {
-    await apiService.put('stores/$id/delete', {'state': 0});
+    await apiService.patch('stores/delete/$id', {'state': 0});
   }
 }

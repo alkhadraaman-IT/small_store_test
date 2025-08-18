@@ -6,19 +6,32 @@ import 'package:small_stores_test/home.dart';
 import 'package:small_stores_test/mystore.dart';
 import 'package:small_stores_test/style.dart';
 import 'package:small_stores_test/variables.dart';
+import 'announcementdata.dart';
 import 'drawer.dart';
+import 'models/usermodel.dart';
 import 'profile.dart';
 import 'statistics.dart';
 
-class MainPageUser extends StatefulWidget {
+class MainPageAdmin extends StatefulWidget {
+  final User user;
+
+  const MainPageAdmin({Key? key, required this.user}) : super(key: key);
+
   @override
-  _MainPageUser createState() => _MainPageUser();
+  _MainPageAdmin createState() => _MainPageAdmin();
 }
 
-class _MainPageUser extends State<MainPageUser> {
+class _MainPageAdmin extends State<MainPageAdmin> {
   int _selectedIndex = 1; // الفهرس الافتراضي للصفحة
 
+  // قائمة الصفحات المرتبطة بالرموز
+  List<Widget> get _pages => [
+    Statistics(),
+    Home(user: widget.user),
+    AnnouncementData(user: widget.user),
+  ];
   final navigationKey = GlobalKey<CurvedNavigationBarState>();
+
 
   // قائمة الرموز في شريط التنقل السفلي
   final items = <Widget>[
@@ -27,12 +40,7 @@ class _MainPageUser extends State<MainPageUser> {
     Icon(Icons.campaign, size: 30,color: Colors.white),
   ];
 
-  // قائمة الصفحات المرتبطة بالرموز
-  final List<Widget> _pages = [
-    Statistics(),
-    Home(),
-    Announcement(),
-  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +50,7 @@ class _MainPageUser extends State<MainPageUser> {
         leading: Padding(
           padding: const EdgeInsets.only(left: 8.0),
           child: Image.asset(
-            'assets/images/img_1.png',
+            'assets/images/img_5.png',
             height: 32,
             width: 32,
           ),
@@ -70,7 +78,7 @@ class _MainPageUser extends State<MainPageUser> {
         ],
       ),
 
-      drawer: CustomDrawer(),
+      drawer: CustomDrawer(user: widget.user,),
 
       body: _pages[_selectedIndex], // عرض الصفحة الحالية بناءً على الفهرس
 

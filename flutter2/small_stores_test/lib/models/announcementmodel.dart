@@ -3,7 +3,7 @@ class Announcement {
   final int store_id ;
   final String announcement_description;
   final String announcement_date ;
-  final bool announcement_state;
+  final int announcement_state;
   final String announcement_photo;
 
   Announcement({

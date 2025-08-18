@@ -13,10 +13,15 @@ import 'apiService/class_api.dart';
 import 'apiService/store_api.dart';
 import 'appbar.dart';
 import 'drawer.dart';
+import 'models/usermodel.dart';
 import 'style.dart';
 import 'variables.dart';
 
 class AddStore extends StatefulWidget {
+  final User user; // إضافة المتغير
+
+  const AddStore({super.key, required this.user});
+
   @override
   _AddStore createState() => _AddStore();
 }
@@ -87,7 +92,7 @@ class _AddStore extends State<AddStore> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: CustomAppBar(),
-        drawer: CustomDrawer(),
+        drawer: CustomDrawer(user: widget.user,),
         body: SingleChildScrollView(
             child: Center(
               child: Padding(
@@ -243,10 +248,11 @@ class _AddStore extends State<AddStore> {
 
                                 if (_formKey.currentState!.validate() && _selectedClassId != null) {
                                   setState(() => _isLoading = true);
+                                  print('User ID: ${widget.user.id}');
 
                                   try {
                                     final newStore = await storeApi.addStore( // ✅ الصحيح
-                                      user_id: 1,
+                                      user_id: widget.user.id,
                                       store_name: _storeNameController.text,
                                       store_phone: '+963${_storePhoneController.text}',
                                       store_place: _storePlanController.text,
@@ -254,15 +260,17 @@ class _AddStore extends State<AddStore> {
                                       store_description: _storeNoteController.text,
                                       store_photo: _storeImageController.text,
                                     );
+                                    _storeNameController.clear();
+                                    _storePlanController.clear();
+                                    _storePhoneController.clear();
+                                    _storeClassController.clear();
+                                    _storeNoteController.clear();
+                                    _storeImageController.clear();
 
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('تم إضافة المتجر بنجاح')),
                                     );
 
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => Store()),
-                                    );
                                   } catch (e) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('خطأ في الإضافة: ${e.toString()}')),

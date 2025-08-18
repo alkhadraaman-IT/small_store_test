@@ -318,14 +318,19 @@ class _CreateUser extends State<CreateUser> {
                               password: _passWordController.text,
                               phone: _phoneController.text,
                             );
+                            print('dataaaaaaaaaaaaaaa:');
+                            print(newUser.toJson());
+
+                            final int user_id = newUser.id;
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('تم إنشاء الحساب بنجاح')),
                             );
+                            print(newUser.toJson());
 
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => MainPageUser()),
+                              MaterialPageRoute(builder: (context) => MainPageUser(user: newUser)),
                             );} catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('فشل في إنشاء الحساب: ${e.toString()}')),
