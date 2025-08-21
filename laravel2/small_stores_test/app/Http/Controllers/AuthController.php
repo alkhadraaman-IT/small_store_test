@@ -112,11 +112,16 @@ class AuthController extends Controller
     }
 
 
-    public function ForgotPassword()
+    public function ForgotPassword(Request $request)
     {
         try {
-            $id = Auth::user()->id;
-            $email = User::find($id)->email;
+            $validator = Validator::make($request->all(), [
+                'email' => 'required|string|email',
+            ]);
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+            $email = $request->email;
 
             DB::table('verify_codes')->where('email', $email)->delete();
             $code_v = mt_rand(10000, 99999);
