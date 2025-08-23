@@ -122,8 +122,10 @@ class AuthController extends Controller
                 return response()->json($validator->errors(), 422);
             }
             $email = $request->email;
+            if (DB::table('verify_codes')->where('email', $email)->first() != null) {
+                DB::table('verify_codes')->where('email', $email)->delete();
 
-            DB::table('verify_codes')->where('email', $email)->delete();
+            }
             $code_v = mt_rand(10000, 99999);
             DB::table('verify_codes')->insert([
                 'email' => $email,
