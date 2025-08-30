@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -123,7 +124,9 @@ class AuthController extends Controller
             }
             $email = $request->email;
 
-            DB::table('verify_codes')->where('email', $email)->delete();
+if (DB::table('verify_codes')->where('email', $email)->first() != null) {
+                DB::table('verify_codes')->where('email', $email)->delete();
+  }
             $code_v = mt_rand(10000, 99999);
             DB::table('verify_codes')->insert([
                 'email' => $email,
@@ -139,26 +142,88 @@ class AuthController extends Controller
     public function CheckCode(ForgetPasswordCodeRequest $request)
     {
         try {
+Log::info($request->all());
             $data = $request->validated();
             $ip = $request->ip();
-            $id = Auth::user()->id;
-            $email = User::find($id)->email;
+           // $id = Auth::user()->id;
+            //$email = User::find($id)->email;
+            if (!isset($data['email'])) {
+            return response()->json([
+                'message' => 'البريد الإلكتروني مطلوب'
+            ], 422);
+        }
+        $email = $data['email']; // تأكد أن الحقل اسمه 'email' في الطلب
+
             $code = verifyCode::where('email', $email)->first();
-            if ($code['code'] != $data['code']) {
+
+            if (!$code) {
+            return response()->json(["message" => "لم يتم إرسال أي كود إلى هذا البريد"], 404);
+        }
+
+        if ($code['code'] != $data['code']) {
                 $message = 'code not correct';
                 return response()->json(["message" => $message], 401);
             }
+            
             $code->update([
                 'checked' => true,
                 'ip' => $ip
             ]);
+
             return response()->json(["data" => $data, "message" => "code is correct"], 200);
         } catch (\Throwable $th) {
-            return response()->json("an error occured " . $th, $th->getCode());
+        return response()->json([
+            'message' => 'حدث خطأ في الخادم',
+            'error' => $th->getMessage() // اختياري
+        ], 500);
         }
     }
+public function ChangePassword(ChangePasswordRequest $request)
+{
+    try {
+        // التحقق من أن البريد الإلكتروني موجود في الطلب
+        if (!isset($request->email)) {
+            return response()->json(["message" => "Email is required"], 422);
+        }
 
-    public function ChangePassword(ChangePasswordRequest $request)
+        // التحقق من وجود المستخدم
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(["message" => "User not found"], 404);
+        }
+
+        // التحقق من الكود
+        $data = $request->validated();
+        $ip = $request->ip();
+
+        $code = verifyCode::where('email', $user['email'])->first();
+        if (!$code) {
+            return response()->json(["message" => "Verification code not found"], 404);
+        }
+
+        if ($code['ip'] != $ip || $code['checked'] == false) {
+            return response()->json(["message" => "An error occurred, try later"], 401);
+        }
+
+        // التحقق من تطابق كلمات المرور
+        if ($data['passwordRet'] != $data['password']) {
+            return response()->json(["message" => "Passwords do not match"], 401);
+        }
+
+        // تحديث كلمة المرور
+        $user->update(['password' => Hash::make($data['password'])]);
+        DB::table('verify_codes')->where('email', $user['email'])->delete();
+
+        return response()->json(["data" => $data, "message" => "Password was changed successfully"], 200);
+    } catch (\Throwable $th) {
+        $statusCode = $th->getCode() >= 100 && $th->getCode() <= 599 ? $th->getCode() : 500;
+        return response()->json([
+            "message" => "An error occurred: " . $th->getMessage(),
+            "error" => $th->getMessage()
+        ], $statusCode);
+    }
+}
+    /*public function ChangePassword(ChangePasswordRequest $request)
     {
 
         try {
@@ -182,5 +247,5 @@ class AuthController extends Controller
         } catch (\Throwable $th) {
             return response()->json("an error occured " . $th, $th->getCode());
         }
-    }
+    }*/
 }

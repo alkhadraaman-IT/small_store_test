@@ -86,7 +86,7 @@ public function update(Request $request, $id)
             'class_id' => 'sometimes|exists:store_classes,id',
             'store_description' => 'sometimes|string',
             'store_photo' => 'sometimes|string',
-            'store_state' => 'sometimes|boolean'
+            'store_state' => 'sometimes|in:0,1'
         ]);
 
         $updates = [];

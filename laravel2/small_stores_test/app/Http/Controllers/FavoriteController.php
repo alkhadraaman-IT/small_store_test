@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Product;  
 use App\Models\Favorite;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator; // ✅ أضفي هذا السطر
 
 class FavoriteController extends Controller
 {
@@ -92,9 +93,11 @@ public function index($user_id)
 public function create() {
     // عرض نموذج إنشاء
 }
-
 public function store(Request $request)
 {
+        \Log::info('Incoming request data:', $request->all()); // طباعة البيانات الواردة
+
+
     //تخزين البيانات
     $validated = $request->validate([
         'user_id' => [
@@ -144,22 +147,25 @@ public function store(Request $request)
             'product_id' => $validated['product_id'],
             'state' => true
         ]);
-
+\Log::info('Final response:', [
+    'success' => true,
+    'message' => 'تمت الإضافة بنجاح',
+    'data' => [
+        'id' => $favorite->id,
+        'user_id' => $favorite->user_id,
+        'product_id' => $favorite->product_id,
+        'state' => 1,
+    ]
+]);
         return response()->json([
             'success' => true,
             'message' => 'تمت الإضافة بنجاح',
             'data' => [
-                'favorite_id' => $favorite->id,
-                'user' => [
-                    'id' => $favorite->user_id,
-                    'name' => $favorite->user->name
-                ],
-                'product' => [
-                    'id' => $favorite->product_id,
-                    'name' => $favorite->product->product_name,
-                    'price' => $favorite->product->product_price
-                ]
-            ]
+    'id' => $favorite->id,
+    'user_id' => $favorite->user_id,
+    'product_id' => $favorite->product_id,
+    'state' => 1, // نضيفه مباشرة
+]
         ], 201);
 
     } catch (\Exception $e) {
@@ -170,6 +176,91 @@ public function store(Request $request)
         ], 500);
     }
 }
+/*
+راكز2
+public function store(Request $request)
+{
+        \Log::info('Incoming request data:', $request->all()); // طباعة البيانات الواردة
+
+
+    //تخزين البيانات
+    $validated = $request->validate([
+        'user_id' => [
+            'required',
+            'exists:users,id',
+            function ($attribute, $value, $fail) {
+                // تحقق أن المستخدم المفعل
+                $user = User::find($value);
+                if (!$user || !$user->status) {
+                    $fail('المستخدم غير مفعل أو غير موجود');
+                }
+            }
+        ],
+        'product_id' => [
+            'required',
+            'exists:products,id',
+            function ($attribute, $value, $fail) use ($request) {
+                $product = Product::find($value);
+                // تحقق أن المنتج مفعل ومتاح
+                if (!$product || !$product->product_state || !$product->product_available) {
+                    $fail('المنتج غير متاح للإضافة');
+                }
+                // تحقق أن المتجر مفعل
+                if ($product->store && !$product->store->store_state) {
+                    $fail('متجر المنتج غير مفعل');
+                }
+            }
+        ]
+    ]);
+
+    try {
+        // التحقق من التكرار أولاً
+        $existing = Favorite::where([
+            'user_id' => $validated['user_id'],
+            'product_id' => $validated['product_id']
+        ])->exists();
+
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'المنتج مضاف مسبقاً إلى المفضلة'
+            ], 409);
+        }
+
+        $favorite = Favorite::create([
+            'user_id' => $validated['user_id'],
+            'product_id' => $validated['product_id'],
+            'state' => true
+        ]);
+\Log::info('Final response:', [
+    'success' => true,
+    'message' => 'تمت الإضافة بنجاح',
+    'data' => [
+        'id' => $favorite->id,
+        'user_id' => $favorite->user_id,
+        'product_id' => $favorite->product_id,
+        'state' => 1,
+    ]
+]);
+        return response()->json([
+            'success' => true,
+            'message' => 'تمت الإضافة بنجاح',
+            'data' => [
+    'id' => $favorite->id,
+    'user_id' => $favorite->user_id,
+    'product_id' => $favorite->product_id,
+    'state' => 1, // نضيفه مباشرة
+]
+        ], 201);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'حدث خطأ أثناء الإضافة',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}*/
 
 public function show($id) {
     // عرض بيانات محددة
@@ -179,9 +270,41 @@ public function edit($id) {
     // عرض نموذج تعديل
 }
 
-public function update(Request $request, $id) {
-    // تحديث بيانات
-}
+public function update(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'state' => 'required|integer|in:0,1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'بيانات غير صحيحة',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $favorit = Favorite::findOrFail($id); // ✅ هنا يجب أن يكون Favorit
+            $favorit->update(['state' => $request->state]);
+
+            $message = $request->state == 1 
+                ? 'تم إضافة العنصر إلى المفضلة بنجاح' 
+                : 'تم إزالة العنصر من المفضلة بنجاح';
+
+            return response()->json([
+                'success' => true,
+                'data' => $favorit,
+                'message' => $message
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'العنصر غير موجود'
+            ], 404);
+        }
+    }
 
 public function destroy($id) {
     // حذف بيانات
@@ -250,4 +373,24 @@ public function getProductLikesCount($product_id)
     }
 }
 
+public function showFavoritByUserAll($user_id)
+{
+    try {
+        // جلب كل العناصر (حتى state = 0)
+        $favorites = Favorite::where('user_id', $user_id)
+            ->orderByDesc('created_at')
+            ->get();
+            
+        return response()->json([
+            'success' => true,
+            'data' => $favorites,
+            'message' => 'تم جلب العناصر بنجاح'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'حدث خطأ في جلب العناصر'
+        ], 500);
+    }
+}
 }

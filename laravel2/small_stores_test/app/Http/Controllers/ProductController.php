@@ -26,52 +26,84 @@ class ProductController extends Controller
     }
 
     public function store(Request $request)
-    {
-        // التحقق من صحة البيانات
-        $validated = $request->validate([
-            'store_id' => 'required|exists:stores,id',
-            'product_name' => 'required|string|max:255',
-            'type_id' => 'required|exists:types,id',
-            'product_description' => 'required|string',
-            'product_price' => 'required|numeric|min:0',
-            'product_available' => 'sometimes|boolean',
-            'product_state' => 'sometimes|boolean',
-            'product_photo_1' => 'required|string', // يمكن استبدالها بتحميل ملف
-            'product_photo_2' => 'nullable|string',
-            'product_photo_3' => 'nullable|string',
-            'product_photo_4' => 'nullable|string',
-        ]);
-        if (Product::where("product_name", $validated['product_name'])->first() != null) {
-            return response()->json(["message" => "This Product Already Exists"], 403);
-        }
-        try {
-            // إنشاء المنتج
-            $product = Product::create([
-                'store_id' => $validated['store_id'],
-                'product_name' => $validated['product_name'],
-                'type_id' => $validated['type_id'],
-                'product_description' => $validated['product_description'],
-                'product_price' => $validated['product_price'],
-                'product_available' => $validated['product_available'] ?? true,
-                'product_state' => $validated['product_state'] ?? true,
-                'product_photo_1' => $validated['product_photo_1'],
-                'product_photo_2' => $validated['product_photo_2'] ?? null,
-                'product_photo_3' => $validated['product_photo_3'] ?? null,
-                'product_photo_4' => $validated['product_photo_4'] ?? null,
-            ]);
+{
+    // التحقق من صحة البيانات
+    $validated = $request->validate([
+        'store_id' => 'required|exists:stores,id',
+        'product_name' => 'required|string|max:255',
+        'type_id' => 'required|exists:types,id',
+        'product_description' => 'required|string',
+        'product_price' => 'required|numeric|min:0',
+        'product_available' => 'sometimes|boolean',
+        'product_state' => 'sometimes|boolean',
+        'product_photo_1' => 'required|image|max:4096',
+        'product_photo_2' => 'nullable|image|max:4096',
+        'product_photo_3' => 'nullable|image|max:4096',
+        'product_photo_4' => 'nullable|image|max:4096',
+    ]);
 
-            return response()->json([
-                'message' => 'تم إضافة المنتج بنجاح',
-                'product' => $product
-            ], 201);
+    // تحميل الصورة الرئيسية
+    $path1 = $request->file('product_photo_1')->store('products', 'public');
+    $url1 = asset('storage/' . $path1);
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'فشل في إضافة المنتج',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    // معالجة الصور الإضافية
+    $url2 = null;
+    $url3 = null;
+    $url4 = null;
+
+    if ($request->hasFile('product_photo_2')) {
+        $path2 = $request->file('product_photo_2')->store('products', 'public');
+        $url2 = asset('storage/' . $path2);
     }
+    
+    if ($request->hasFile('product_photo_3')) {
+        $path3 = $request->file('product_photo_3')->store('products', 'public');
+        $url3 = asset('storage/' . $path3);
+    }
+    
+    if ($request->hasFile('product_photo_4')) {
+        $path4 = $request->file('product_photo_4')->store('products', 'public');
+        $url4 = asset('storage/' . $path4);
+    }
+
+    // التحقق من عدم وجود منتج بنفس الاسم
+    if (Product::where("product_name", $validated['product_name'])->first() != null) {
+        return response()->json(["message" => "This Product Already Exists"], 403);
+    }
+
+    try {
+        // إنشاء المنتج
+        $product = Product::create([
+            'store_id' => $validated['store_id'],
+            'product_name' => $validated['product_name'],
+            'type_id' => $validated['type_id'],
+            'product_description' => $validated['product_description'],
+            'product_price' => $validated['product_price'],
+            'product_available' => $validated['product_available'] ?? true,
+            'product_state' => $validated['product_state'] ?? true,
+            'product_photo_1' => $url1, // استخدام المسار بدلاً من الملف
+            'product_photo_2' => $url2,
+            'product_photo_3' => $url3,
+            'product_photo_4' => $url4,
+        ]);
+
+        return response()->json([
+            'message' => 'تم إضافة المنتج بنجاح',
+            'product' => $product
+        ], 201);
+
+    } catch (\Exception $e) {
+    \Log::error('Product creation error: ' . $e->getMessage());
+    \Log::error('File: ' . $e->getFile());
+    \Log::error('Line: ' . $e->getLine());
+    
+    return response()->json([
+        'message' => 'فشل في إضافة المنتج',
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString() // فقط في وضع التطوير
+    ], 500);
+}
+}
 
     public function show($id)
     {
@@ -103,8 +135,8 @@ class ProductController extends Controller
             'type_id' => 'sometimes|exists:types,id',
             'product_description' => 'sometimes|string',
             'product_price' => 'sometimes|integer|min:0',
-            'product_available' => 'sometimes|boolean',
-            'product_state' => 'sometimes|boolean',
+            'product_available' => 'sometimes|in:0,1',
+            'product_state' => 'sometimes|in:0,1',
             'product_photo_1' => 'sometimes|string',
             'product_photo_2' => 'nullable|string',
             'product_photo_3' => 'nullable|string',

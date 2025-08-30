@@ -19,4 +19,9 @@ class Announcement extends Model
     {
         return $this->belongsTo(Store::class); // ← هون كانت الغلطة: كنت رابطها بـ User بدل Store
     }
+
+    protected $casts = [
+    'announcement_state' => 'integer',
+];
+
 }

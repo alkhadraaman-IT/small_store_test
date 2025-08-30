@@ -23,6 +23,7 @@ class ForgetPasswordCodeRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'email' => 'required|email', // ✅ بريد إلكتروني صالح
             'code' => 'required|string|size:5',
         ];
     }

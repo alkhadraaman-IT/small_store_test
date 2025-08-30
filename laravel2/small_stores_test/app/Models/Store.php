@@ -37,5 +37,9 @@ public function storeClass()
     {
         return $this->hasMany(Announcement::class); // ← صححنا العلاقة هون
     }
+    
+protected $casts = [
+    'store_state' => 'integer',
+];
 
 }

@@ -10,9 +10,16 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        //
+    ->withMiddleware(function (Middleware $middleware) {
+        // أضف middleware الـ CORS هنا
+        $middleware->append(\App\Http\Middleware\Cors::class);
+        
+        // أو إذا أردت تطبيقه على routes معينة فقط
+        // $middleware->group('api', [
+        //     \App\Http\Middleware\Cors::class,
+        // ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+  
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

@@ -34,4 +34,9 @@ public function favorites()
     {
 return $this->hasMany(Favorite::class); // ✅
     }
+
+      protected $casts = [
+    'product_state' => 'integer',
+    'product_available' => 'integer',
+];
 }
