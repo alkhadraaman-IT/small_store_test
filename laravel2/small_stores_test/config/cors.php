@@ -1,12 +1,11 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'storage/*'], // أضف 'storage/*'
+    'paths' => ['api/*', 'storage/*'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => ['*'], // أو ضع domians محددة ['http://localhost:3000']
+    'allowed_origins' => ['*'],   // أو حط http://localhost:xxxx تبع Flutter
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
-    'exposed_headers' => [],
-    'max_age' => 0,
     'supports_credentials' => false,
 ];
+

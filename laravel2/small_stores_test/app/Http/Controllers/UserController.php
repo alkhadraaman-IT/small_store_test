@@ -75,20 +75,34 @@ public function update(Request $request, $id)
         // التحقق من صحة البيانات
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,'.$user->id,
-            'phone' => 'sometimes|numeric|unique:users,phone,'.$user->id,
+            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'phone' => 'sometimes|numeric|unique:users,phone,' . $user->id,
             'password' => 'sometimes|string|min:8',
-            'profile_photo' => 'nullable|string',
+            'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'type' => 'sometimes|in:0,1',
             'status' => 'sometimes|in:0,1',
-
         ]);
 
-        // تحديث البيانات
+        // إذا أرسل صورة
+        if ($request->hasFile('profile_photo')) {
+            $image = $request->file('profile_photo');
+
+            // اسم مميز للصورة
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+            // حفظ الصورة في مجلد users داخل storage/app/public
+            $path = $image->storeAs('users', $imageName, 'public');
+
+            // حفظ المسار في قاعدة البيانات
+            $validated['profile_photo'] = 'storage/' . $path;
+        }
+
+        // تحديث كلمة المرور إذا موجودة
         if (isset($validated['password'])) {
             $validated['password'] = Hash::make($validated['password']);
         }
 
+        // تحديث المستخدم
         $user->update($validated);
 
         return response()->json([
@@ -105,6 +119,8 @@ public function update(Request $request, $id)
         ], 500);
     }
 }
+
+
 
 public function destroy($id)
 {

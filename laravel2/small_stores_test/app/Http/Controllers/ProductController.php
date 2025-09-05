@@ -123,34 +123,48 @@ class ProductController extends Controller
     }
 
     public function update(Request $request, $id)
-    {
-        $product = Product::find($id);
+{
+    $product = Product::find($id);
 
-        if (!$product) {
-            return response()->json(['message' => 'المنتج غير موجود'], 404);
-        }
-
-        $validated = $request->validate([
-            'product_name' => 'sometimes|string|max:255',
-            'type_id' => 'sometimes|exists:types,id',
-            'product_description' => 'sometimes|string',
-            'product_price' => 'sometimes|integer|min:0',
-            'product_available' => 'sometimes|in:0,1',
-            'product_state' => 'sometimes|in:0,1',
-            'product_photo_1' => 'sometimes|string',
-            'product_photo_2' => 'nullable|string',
-            'product_photo_3' => 'nullable|string',
-            'product_photo_4' => 'nullable|string',
-        ]);
-
-        $product->update($validated);
-        $product->refresh(); // لإعادة تحميل البيانات من قاعدة البيانات
-
-        return response()->json([
-            'message' => 'تم تحديث المنتج بنجاح',
-            'product' => $product
-        ]);
+    if (!$product) {
+        return response()->json(['message' => 'المنتج غير موجود'], 404);
     }
+
+    // التحقق من صحة البيانات
+    $validated = $request->validate([
+        'product_name' => 'sometimes|string|max:255',
+        'type_id' => 'sometimes|exists:types,id',
+        'product_description' => 'sometimes|string',
+        'product_price' => 'sometimes|numeric|min:0',
+        'product_available' => 'sometimes|boolean',
+        'product_state' => 'sometimes|boolean',
+        'product_photo_1' => 'sometimes|image|max:4096',
+        'product_photo_2' => 'nullable|image|max:4096',
+        'product_photo_3' => 'nullable|image|max:4096',
+        'product_photo_4' => 'nullable|image|max:4096',
+    ]);
+
+    // تحديث الصور (إذا انرفع جديد بيستبدل القديم)
+    for ($i = 1; $i <= 4; $i++) {
+        $field = "product_photo_" . $i;
+
+        if ($request->hasFile($field)) {
+            $path = $request->file($field)->store('products', 'public');
+            $url = asset('storage/' . $path);
+            $validated[$field] = $url;
+        }
+    }
+
+    // تحديث المنتج
+    $product->update($validated);
+    $product->refresh();
+
+    return response()->json([
+        'message' => 'تم تحديث المنتج بنجاح',
+        'product' => $product
+    ]);
+}
+
 
     public function destroy($id)
     {

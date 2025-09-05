@@ -39,4 +39,34 @@ return $this->hasMany(Favorite::class); // ✅
     'product_state' => 'integer',
     'product_available' => 'integer',
 ];
+
+// Accessor لإرجاع رابط الصورة كامل
+public function getProductPhoto1UrlAttribute()
+{
+    return $this->product_photo_1 
+        ? url('storage/products/' . $this->product_photo_1)
+        : null;
+}
+
+public function getProductPhoto2UrlAttribute()
+{
+    return $this->product_photo_2 
+        ? url('storage/products/' . $this->product_photo_2)
+        : null;
+}
+
+public function getProductPhoto3UrlAttribute()
+{
+    return $this->product_photo_3 
+        ? url('storage/products/' . $this->product_photo_3)
+        : null;
+}
+
+public function getProductPhoto4UrlAttribute()
+{
+    return $this->product_photo_4 
+        ? url('storage/products/' . $this->product_photo_4)
+        : null;
+}
+
 }

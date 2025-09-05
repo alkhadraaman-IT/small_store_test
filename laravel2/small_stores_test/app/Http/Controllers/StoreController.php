@@ -20,19 +20,21 @@ public function create() {
 
 public function store(Request $request)
 {
-    // 1. التحقق من صحة البيانات
     $validated = $request->validate([
         'user_id' => 'required|exists:users,id',
         'store_name' => 'required|string|max:255',
-        'store_phone' => 'required|string|max:20',
+        'store_phone' => 'required|string|max:20|unique:stores,store_phone',
         'store_place' => 'required|string',
         'class_id' => 'required|exists:store_classes,id',
         'store_description' => 'required|string',
-        'store_photo' => 'required|string', // أو 'image|mimes:jpeg,png,jpg|max:2048' لرفع ملف
+        'store_photo' => 'required|image|max:4096', // ✅ صورة
     ]);
 
     try {
-        // 2. إنشاء المتجر
+        // رفع صورة المتجر
+        $path = $request->file('store_photo')->store('stores', 'public');
+        $url = config('app.url') . '/storage/' . $path;
+
         $store = Store::create([
             'user_id' => $validated['user_id'],
             'store_name' => $validated['store_name'],
@@ -40,24 +42,23 @@ public function store(Request $request)
             'store_place' => $validated['store_place'],
             'class_id' => $validated['class_id'],
             'store_description' => $validated['store_description'],
-            'store_photo' => $validated['store_photo'], // أو حفظ الصورة إذا كانت ملفًا
-            'store_state' => true // القيمة الافتراضية
+            'store_photo' => $url,
+            'store_state' => true
         ]);
 
-        // 3. إرجاع الاستجابة
         return response()->json([
             'message' => 'تم إنشاء المتجر بنجاح',
-            'data' => $store->load(['user', 'storeClass']) // تحميل العلاقات
+            'data' => $store->load(['user', 'storeClass'])
         ], 201);
 
     } catch (\Exception $e) {
-        // 4. معالجة الأخطاء
         return response()->json([
             'message' => 'فشل في إنشاء المتجر',
             'error' => $e->getMessage()
         ], 500);
     }
 }
+
 
 public function show($id) {
     // عرض بيانات محددة
@@ -85,23 +86,15 @@ public function update(Request $request, $id)
             'store_place' => 'sometimes|string',
             'class_id' => 'sometimes|exists:store_classes,id',
             'store_description' => 'sometimes|string',
-            'store_photo' => 'sometimes|string',
+            'store_photo' => 'sometimes|image|max:4096', // ✅ صورة
             'store_state' => 'sometimes|in:0,1'
         ]);
 
-        $updates = [];
-        foreach ($validated as $key => $value) {
-            if ($store->{$key} != $value) {
-                $updates[$key] = ['old' => $store->{$key}, 'new' => $value];
-            }
-        }
-
-        if (empty($updates)) {
-            return response()->json([
-                'success' => true,
-                'message' => 'لم يتم تعديل أي بيانات - جميع القيم مطابقة للقيم الحالية',
-                'data' => $store
-            ]);
+        // إذا بعت صورة جديدة
+        if ($request->hasFile('store_photo')) {
+            $path = $request->file('store_photo')->store('stores', 'public');
+            $url = config('app.url') . '/storage/' . $path;
+            $validated['store_photo'] = $url;
         }
 
         $store->update($validated);
@@ -109,7 +102,6 @@ public function update(Request $request, $id)
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث المتجر بنجاح',
-            'changes' => $updates,
             'data' => $store->refresh()
         ]);
 
@@ -126,6 +118,7 @@ public function update(Request $request, $id)
         ], 500);
     }
 }
+
 
 public function destroy($id) {
     // حذف بيانات

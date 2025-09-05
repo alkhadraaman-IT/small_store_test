@@ -30,32 +30,36 @@ public function create() {
 
 public function store(Request $request)
 {
-    // 1. التحقق من صحة البيانات
+    // 1. التحقق من صحة البيانات مع استقبال ملف
     $validated = $request->validate([
         'store_id' => 'required|exists:stores,id',
         'announcement_description' => 'required|string|max:1000',
         'announcement_date' => 'required|date|after_or_equal:today',
-        'announcement_photo' => 'required|string', // أو 'image|mimes:jpeg,png,jpg|max:2048'
+        'announcement_photo' => 'required|image|mimes:jpeg,png,jpg|max:2048', // ملف صورة
     ]);
 
     try {
-        // 2. إنشاء الإعلان
+        // 2. رفع الصورة
+        if ($request->hasFile('announcement_photo')) {
+            $path = $request->file('announcement_photo')->store('announcements', 'public'); 
+            $validated['announcement_photo'] = '/storage/' . $path; // رابط للوصول للصورة
+        }
+
+        // 3. إنشاء الإعلان
         $announcement = Announcement::create([
             'store_id' => $validated['store_id'],
             'announcement_description' => $validated['announcement_description'],
             'announcement_date' => $validated['announcement_date'],
             'announcement_photo' => $validated['announcement_photo'],
-            'announcement_state' => true // القيمة الافتراضية
+            'announcement_state' => true
         ]);
 
-        // 3. إرجاع الاستجابة
         return response()->json([
             'message' => 'تم إضافة الإعلان بنجاح',
-            'data' => $announcement->load('store') // تحميل علاقة المتجر
+            'data' => $announcement->load('store')
         ], 201);
 
     } catch (\Exception $e) {
-        // 4. معالجة الأخطاء
         return response()->json([
             'message' => 'فشل في إضافة الإعلان',
             'error' => $e->getMessage()
@@ -78,27 +82,31 @@ public function edit($id) {
     // عرض نموذج تعديل
 }
 
-public function update(Request $request, $id) {
-    // 1. البحث عن الإعلان
+public function update(Request $request, $id)
+{
     $announcement = Announcement::find($id);
     if (!$announcement) {
         return response()->json(['message' => 'الإعلان غير موجود'], 404);
     }
 
-    // 2. التحقق من صحة البيانات
     $validated = $request->validate([
         'store_id' => 'required|exists:stores,id',
         'announcement_description' => 'required|string|max:1000',
         'announcement_date' => 'required|date|after_or_equal:today',
-        'announcement_photo' => 'required|string',
+        'announcement_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // يمكن تركها فارغة
         'announcement_state' => 'required|boolean',
     ]);
 
     try {
-        // 3. تحديث الإعلان
+        // رفع الصورة إذا تم إرسالها
+        if ($request->hasFile('announcement_photo')) {
+            $path = $request->file('announcement_photo')->store('announcements', 'public'); 
+            $validated['announcement_photo'] = '/storage/' . $path;
+        }
+
+        // تحديث الإعلان
         $announcement->update($validated);
 
-        // 4. إرجاع الاستجابة
         return response()->json([
             'message' => 'تم تحديث الإعلان بنجاح',
             'data' => $announcement->load('store')
