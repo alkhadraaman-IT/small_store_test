@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
+import 'apiService/api.dart';
 import 'firstlaunch.dart';
 import 'login.dart';
 import 'mainpageadmin.dart';
@@ -9,6 +11,10 @@ import 'mainpageuser.dart';
 import 'models/usermodel.dart';
 import 'style.dart';
 import 'variables.dart';
+import 'apiService/api_service.dart'; // مكان ملف ApiService
+
+// ✅ أنشئ نسخة واحدة من ApiService (global)
+final apiService = ApiService(client: http.Client());
 
 class Splashscreen extends StatefulWidget {
   @override
@@ -22,23 +28,26 @@ class _Splashscreen extends State<Splashscreen> {
     _checkAuth();
   }
 
+
   Future<void> _checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
 
     bool isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
-    String? token = prefs.getString('token');
+    String? access_token = prefs.getString('access_token');
     int? userType = prefs.getInt('userType');
+
+    // ✅ حمّل التوكن بالـ ApiService (مرة وحدة بس)
+    await apiService.loadTokenFromStorage();
 
     await Future.delayed(const Duration(seconds: 3)); // وقت السبلاتش
 
     if (isFirstLaunch) {
-      // أول مرة
       await prefs.setBool('isFirstLaunch', false);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => FirstLaunch()),
       );
-    } else if (token != null && userType != null) {
+    } else if (access_token != null && userType != null) {
       // فيه مستخدم محفوظ
       User user = User(
         id: prefs.getInt('userId') ?? 0,
@@ -50,6 +59,7 @@ class _Splashscreen extends State<Splashscreen> {
         type: prefs.getInt('userType') ?? 1,
         status: prefs.getInt('userStatus') ?? 1,
       );
+      await apiService.loadTokenFromStorage();
 
       if (user.type == 0) {
         Navigator.pushReplacement(
@@ -68,7 +78,6 @@ class _Splashscreen extends State<Splashscreen> {
         );
       }
     } else {
-      // لا أول مرة ولا فيه توكن → رجّعو لتسجيل الدخول
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => Login()),

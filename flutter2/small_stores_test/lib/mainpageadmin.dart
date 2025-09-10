@@ -28,7 +28,7 @@ class _MainPageAdmin extends State<MainPageAdmin> {
   List<Widget> get _pages => [
     Statistics(),
     Home(user: widget.user),
-    AnnouncementData(user: widget.user),
+    AnnouncementScreen(user: widget.user),
   ];
   final navigationKey = GlobalKey<CurvedNavigationBarState>();
 

@@ -2,39 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:small_stores_test/style.dart';
 import 'package:small_stores_test/variables.dart';
-import 'dart:math';
+import 'dart:convert';
 
-import 'apiService/api_service.dart';
-import 'apiService/user_api.dart';
 import 'chekpasswordcode.dart';
-import 'models/usermodel.dart';
+
 
 class ForgotPasswordPage extends StatefulWidget {
   @override
-  _ForgotPasswordPage createState() => _ForgotPasswordPage();
+  _ForgotPasswordPageState createState() => _ForgotPasswordPageState();
 }
 
-class _ForgotPasswordPage extends State<ForgotPasswordPage> {
-  final TextEditingController _emailController = TextEditingController();
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  final TextEditingController _emailController = TextEditingController(text: "amanalkh727@gmail.com");
+
+
   final _formKey = GlobalKey<FormState>();
-
-  String? sentCode; // لتخزين كود التحقق المرسل
-  int? user_id;
-  User? user;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
 
   void showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  String generateVerificationCode() {
-    final random = Random();
-    return (1000 + random.nextInt(9000)).toString(); // 4 digits
   }
 
   Future<void> _handleSendCode() async {
@@ -46,43 +31,25 @@ class _ForgotPasswordPage extends State<ForgotPasswordPage> {
     }
 
     try {
-      final api = UserApi(apiService: ApiService(client: http.Client()));
-      final users = await api.getUsers();
+      final response = await http.get(
+        Uri.parse('http://127.0.0.1:8000/api/ForgotPassword?email=$email'),
+      );
 
-      User? user;
 
-      for (var u in users) {
-        if (u.email.toLowerCase() == email.toLowerCase()) {
-          user = u;
-          break;
-        }
-      }
 
-      if (user != null) {
-        // توليد كود التحقق
-        sentCode = generateVerificationCode();
-        print('Verification cooooode sent to user: $sentCode');
-
-        user_id = user.id;
-
-        // هنا يمكنك إرسال الكود عبر الإيميل باستخدام API خاص بالرسائل أو SMTP (غير مدمج بالكود الحالي)
-        // لكن الآن سنعرض صفحة إدخال الكود فقط
-
+      if (response.statusCode == 200) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => VerifyCodePage(
-              sentCode: sentCode!,
-              user_id: user_id!,
-              user: user!,
-            ),
+            builder: (context) => ChekPasswordCode(email: email),
           ),
         );
       } else {
-        showError('هذا البريد غير موجود');
+        final error = jsonDecode(response.body);
+        showError(error["message"] ?? "البريد الإلكتروني غير موجود");
       }
     } catch (e) {
-      showError('حدث خطأ أثناء التحقق: $e');
+      showError('حدث خطأ: $e');
     }
   }
 
@@ -90,12 +57,8 @@ class _ForgotPasswordPage extends State<ForgotPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(app_name, style: style_name_app_o),
+        title: Text(app_name, style: style_name_app_o(color_main)),
         centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -103,45 +66,28 @@ class _ForgotPasswordPage extends State<ForgotPasswordPage> {
           key: _formKey,
           child: Column(
             children: [
-              image_login,
+              image_restpassword,
               SizedBox(height: 16),
-              Text("نسيت كلمة المرور",style: style_text_titel,),
-              SizedBox(height: 16),
-              Text(
-                "أدخل بريدك الإلكتروني لاستعادة كلمة المرور",
-                style: style_text_normal,
-              ),
+              Text("ادخل بريدك الإلكتروني لإرسال كود التحقق",style: style_text_titel,),
               SizedBox(height: 16),
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
-                  labelText: a_email_l,
+                  labelText: "البريد الإلكتروني",
                   prefixIcon: Icon(Icons.email),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'يرجى إدخال البريد الإلكتروني';
-                  }
-                  if (!RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$').hasMatch(value)) {
-                    return 'بريد إلكتروني غير صالح';
-                  }
-                  return null;
-                },
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 16),
               SizedBox(
-                width: MediaQuery.of(context).size.width / 3, // ثلث عرض الشاشة
+                width: MediaQuery.of(context).size.width / 3, // تلت عرض الشاشة
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _handleSendCode();
-                    }
-                  },
-                  style: style_button,
+                  onPressed: _handleSendCode,
+                  style: styleButton(color_main),
                   child: Text("إرسال"),
                 ),
               ),
+
             ],
           ),
         ),

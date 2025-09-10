@@ -23,18 +23,23 @@ class StoreModel  {
 
   // Factory method to convert JSON to Product object
   factory StoreModel.fromJson(Map<String, dynamic> json) {
-    return StoreModel (
-      id: json['id'],
-      user_id  : json['user_id'],
-      store_name   : json['store_name'],
-      store_phone: json['store_phone'].toString(),
-      store_place : json['store_place'],
-      class_id  : json['class_id'],
-      store_description : json['store_description'],
-      store_state : json['store_state'],
-      store_photo : json['store_photo'],
+    final storeData = json['data'] ?? json;
+
+    return StoreModel(
+      id: int.tryParse(storeData['id'].toString()) ?? 0,
+      user_id: int.tryParse(storeData['user_id'].toString()) ?? 0,
+      store_name: storeData['store_name'] ?? '',
+      store_phone: storeData['store_phone']?.toString() ?? '',
+      store_place: storeData['store_place'] ?? '',
+      class_id: int.tryParse(storeData['class_id'].toString()) ?? 0,
+      store_description: storeData['store_description'] ?? '',
+      store_state: int.tryParse(storeData['store_state'].toString()) ?? 0,
+      store_photo: storeData['store_photo']?.toString() ?? '',
     );
   }
+
+
+
 
   Map<String, dynamic> toJson() {
     return {

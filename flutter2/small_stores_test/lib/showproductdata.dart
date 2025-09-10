@@ -31,7 +31,7 @@ class _ShowProfileData extends State<ShowProfileData> {
             onPressed: () => Navigator.pop(context),
           )
               : null,
-          title: Text(app_name, style: style_name_app_o),
+          title: Text(app_name, style: style_name_app_o(color_main)),
           centerTitle: true,
           actions: [
             Builder(
@@ -49,12 +49,12 @@ class _ShowProfileData extends State<ShowProfileData> {
                 tabs: [
                   Tab(text: a_user_data_t),
                   Tab(text: a_user_store_t),
-                ],
+                ],/*
                 indicator: tabBarTheme.indicator, // مؤشر من الأنماط
                 labelColor: tabBarTheme.labelColor,
                 unselectedLabelColor: tabBarTheme.unselectedLabelColor,
                 labelStyle: tabBarTheme.labelStyle,
-                unselectedLabelStyle: tabBarTheme.unselectedLabelStyle,
+                unselectedLabelStyle: tabBarTheme.unselectedLabelStyle,*/
               ),
             ),
           ),

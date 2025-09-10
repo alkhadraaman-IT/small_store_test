@@ -42,7 +42,7 @@ class _ShowMyStoreData extends State<ShowMyStoreData> {
             onPressed: () => Navigator.pop(context),
           )
               : null,
-          title: Text(app_name, style: style_name_app_o),
+          title: Text(app_name, style: style_name_app_o(color_main)),
           centerTitle: true,
           actions: [
             Builder(
@@ -58,8 +58,7 @@ class _ShowMyStoreData extends State<ShowMyStoreData> {
             tabs: [
               Tab(text: a_show_store_t),
               Tab(text: a_show_product_t),
-            ],indicator: tabBarTheme.indicator,
-            labelColor: tabBarTheme.labelColor,
+            ],
           ),
         ),
         drawer: CustomDrawer(user: widget.user,),

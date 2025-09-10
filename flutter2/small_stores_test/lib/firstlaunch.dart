@@ -26,9 +26,9 @@ class _FirstLaunch extends State<FirstLaunch> {
                     child: Column(
                         children: [
                           SizedBox(height: 32,),
-                          image_login,
+                          image_first_launch,
                           SizedBox(height: 16,),
-                          Text(app_name,style: style_name_app_o,),
+                          Text(app_name,style: style_name_app_o(color_main),),
                           SizedBox(height: 16,),
                           Text(a_FirstLaunch_s,style: style_text_normal,),
                           SizedBox(height: 16,),
@@ -41,7 +41,7 @@ class _FirstLaunch extends State<FirstLaunch> {
                                   MaterialPageRoute(builder: (context) => Login()),
                                 );
                               },
-                              style: style_button,
+                              style: styleButton(color_main),
                               child: Text(a_start_b),
                             ),
                           )

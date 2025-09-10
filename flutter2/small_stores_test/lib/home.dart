@@ -69,7 +69,7 @@ class _Home extends State<Home> {
       case 'مواد طبيعية':
         return Icons.spa;
       case 'اعمال يدوية':
-        return Icons.handyman;
+        return Icons.hail_rounded;
       case 'غذائيات':
         return Icons.fastfood;
       default:
@@ -79,6 +79,10 @@ class _Home extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    // تحديد عدد الأعمدة بناءً على عرض الشاشة
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth > 1200 ? 4 : (screenWidth > 800 ? 3 : 2);
+
     return Scaffold(
       body: Center(
         child: Padding(
@@ -202,11 +206,16 @@ class _Home extends State<Home> {
                     ? Center(child: CircularProgressIndicator())
                     : filteredStores.isEmpty
                     ? Center(child: Text('لا يوجد متاجر حالياً'))
-                    : GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  children: filteredStores.map((store) {
+                    : GridView.builder(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1.2, // نسبة العرض إلى الارتفاع للبطاقة
+                  ),
+                  itemCount: filteredStores.length,
+                  itemBuilder: (context, index) {
+                    final store = filteredStores[index];
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -265,6 +274,8 @@ class _Home extends State<Home> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
                                     SizedBox(height: 4),
                                     Row(
@@ -276,11 +287,15 @@ class _Home extends State<Home> {
                                           size: 14,
                                         ),
                                         SizedBox(width: 4),
-                                        Text(
-                                          store.store_place,
-                                          style:
-                                          style_text_normal_w.copyWith(
-                                            fontSize: 12,
+                                        Expanded(
+                                          child: Text(
+                                            store.store_place,
+                                            style:
+                                            style_text_normal_w.copyWith(
+                                              fontSize: 12,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                            maxLines: 1,
                                           ),
                                         ),
                                       ],
@@ -293,7 +308,7 @@ class _Home extends State<Home> {
                         ),
                       ),
                     );
-                  }).toList(),
+                  },
                 ),
               ),
             ],

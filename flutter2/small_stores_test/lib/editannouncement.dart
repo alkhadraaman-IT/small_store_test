@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:small_stores_test/announcement.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:small_stores_test/announcementdata.dart';
+import 'package:small_stores_test/mainpageuser.dart';
 import 'dart:io';
 
 import 'apiService/announcement_api.dart';
@@ -29,7 +32,8 @@ class _EditAnnouncement extends State<EditAnnouncement> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
 
-  File? _selectedImage;
+  File? _selectedImage;  // للموبايل
+  Uint8List? _webImage;  // للويب
   bool _isLoading = false;
   late final AnnouncementApi announcementApi;
 
@@ -46,11 +50,22 @@ class _EditAnnouncement extends State<EditAnnouncement> {
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _announcementImageController.text = pickedFile.path;
-      });
+      if (kIsWeb) {
+        final bytes = await pickedFile.readAsBytes();
+        setState(() {
+          _webImage = bytes;
+          _announcementImageController.text = pickedFile.name;
+        });
+      } else {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+          _announcementImageController.text = pickedFile.path;
+        });
+      }
     }
   }
+
+
 
   @override
   void dispose() {
@@ -71,8 +86,8 @@ class _EditAnnouncement extends State<EditAnnouncement> {
             child: Form(
               key: _formKey,
               child: Column(
-                children: [
-                  image_login,
+                  children: [
+                  image_logo_b,
                   SizedBox(height: 16),
                   Text(a_AddAnnouncement_s, style: style_text_titel),
                   SizedBox(height: 16),
@@ -112,59 +127,61 @@ class _EditAnnouncement extends State<EditAnnouncement> {
                       ),
                       SizedBox(width: 8),
                       ElevatedButton(
-                        style: style_button,
+                        style: styleButton(color_main),
                         onPressed: _pickImage,
-                        child: Text(a_add_b),
+                        child: Text(a_edit_b),
                       ),
                     ],
                   ),
                   SizedBox(height: 16),
                   SizedBox(
-                    width: MediaQuery.of(context).size.width / 3,
-                    child: ElevatedButton(
-                      style: style_button,
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          setState(() => _isLoading = true);
-                          try {
-                            await announcementApi.updateAnnouncement(
-                              id: widget.announcement.id, // استخدام id الإعلان الصحيح
-                              store_id: widget.announcement.store_id,
-                              announcement_description: _announcementNoteController.text,
-                              announcement_date: DateTime.now().toIso8601String(),
-                              announcement_state: true,
-                              announcement_photo: _announcementImageController.text,
-                            );
+                      width: MediaQuery.of(context).size.width / 3,
+                      child: ElevatedButton(
+                          style: styleButton(color_main),
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() => _isLoading = true);
+                            try {
+                              Uint8List? imageBytes;
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('تم تعديل الإعلان بنجاح!')),
-                            );
+                              if (kIsWeb && _webImage != null) {
+                                imageBytes = _webImage!;
+                              } else if (_selectedImage != null) {
+                                imageBytes = Uint8List.fromList(await _selectedImage!.readAsBytes());
+                              }
 
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AnnouncementScreen(user: widget.user),
-                              ),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('فشل في تعديل الإعلان: $e')),
-                            );
-                          } finally {
-                            setState(() => _isLoading = false);
+                              await announcementApi.updateAnnouncement(
+                                id: widget.announcement.id,
+                                store_id: widget.announcement.store_id,
+                                announcement_description: _announcementNoteController.text,
+                                announcement_date: DateTime.now().toIso8601String(),
+                                announcement_state: 1,
+                                announcementPhotoBytes: imageBytes,
+                              );
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('تم تعديل الإعلان بنجاح!')),
+                              );
+                              Navigator.pop(context);
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('فشل في تعديل الإعلان: $e')),
+                              );
+                            } finally {
+                              setState(() => _isLoading = false);
+                            }
                           }
-                        }
-                      },
-                      child: Text(a_edit_b),
-                    ),
-                  ),
-                  SizedBox(height: 16)
-                ],
-              ),
+                        },
+                        child: Text(a_edit_b),
             ),
           ),
+          SizedBox(height: 16)
+          ],
         ),
       ),
+    ),
+    ),
+    ),
     );
   }
 }

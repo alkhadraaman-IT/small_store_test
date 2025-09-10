@@ -1,60 +1,88 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api';
 
   final http.Client client;
+  String? _token;
 
-  ApiService({required this.client});
+  ApiService({required this.client, String? access_token}) : _token = access_token;
 
-  // Helper method for GET requests
+  // حمّل التوكن من الذاكرة (SharedPreferences)
+  Future<void> loadTokenFromStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('access_token');
+    print('Loaded Token: $_token');
+
+  }
+
+  // عيّن/أزل التوكن وقت الحاجة (تسجيل دخول/خروج)
+  void setToken(String? token) {
+    _token = token;
+  }
+
+  Map<String, String> get _headers {
+    final headers = {'Content-Type': 'application/json'};
+    if (_token != null && _token!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $_token';
+    }
+    return headers;
+  }
+
+  // GET
   Future<dynamic> get(String endpoint, {Map<String, String>? queryParams}) async {
-    final response = await client.get(
-      Uri.parse('$baseUrl/$endpoint').replace(queryParameters: queryParams),
-      headers: {'Content-Type': 'application/json'},
-    );
-
+    if (_token == null) await loadTokenFromStorage(); // ⬅️ تحميل تلقائي
+    final uri = Uri.parse('$baseUrl/$endpoint').replace(queryParameters: queryParams);
+    final response = await client.get(uri, headers: _headers);
     return _handleResponse(response);
   }
 
-  // Helper method for POST requests
+  // POST
   Future<dynamic> post(String endpoint, dynamic body) async {
-    final response = await client.post(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
+    if (_token == null) await loadTokenFromStorage(); // ⬅️ تحميل تلقائي
+    final uri = Uri.parse('$baseUrl/$endpoint');
+    final response = await client.post(uri, headers: _headers, body: jsonEncode(body));
     return _handleResponse(response);
   }
 
-  // Helper method for patch requests
+  // PATCH
   Future<dynamic> patch(String endpoint, dynamic body) async {
-    final response = await client.patch(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
-
+    if (_token == null) await loadTokenFromStorage(); // ⬅️ تحميل تلقائي
+    final uri = Uri.parse('$baseUrl/$endpoint');
+    final response = await client.patch(uri, headers: _headers, body: jsonEncode(body));
     return _handleResponse(response);
   }
 
-  // Helper method for DELETE requests
+  // DELETE
   Future<dynamic> delete(String endpoint) async {
-    final response = await client.delete(
-      Uri.parse('$baseUrl/$endpoint'),
-      headers: {'Content-Type': 'application/json'},
-    );
-
+    if (_token == null) await loadTokenFromStorage(); // ⬅️ تحميل تلقائي
+    final uri = Uri.parse('$baseUrl/$endpoint');
+    final response = await client.delete(uri, headers: _headers);
     return _handleResponse(response);
   }
 
   dynamic _handleResponse(http.Response response) {
+    // نجاح
     if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.body.isEmpty) return null; // مثل 204 No Content
       return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to load data: ${response.statusCode}');
     }
+
+    // فشل
+    throw Exception('فشل في الطلب: ${response.statusCode}, ${response.body}');
+  }
+
+  Future<String?> getToken() async {
+    if (_token == null) {
+      await loadTokenFromStorage();
+    }
+    return _token;
+  }
+
+  Map<String, String> getHeaders() {
+    return _headers;
   }
 }
+

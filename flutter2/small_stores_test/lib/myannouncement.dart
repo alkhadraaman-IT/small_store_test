@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:small_stores_test/store.dart';
 import 'package:small_stores_test/variables.dart';
 import 'apiService/api_service.dart';
 import 'apiService/announcement_api.dart';
@@ -38,7 +37,6 @@ class _MyAnnouncement extends State<MyAnnouncement> {
       final api = AnnouncementApi(apiService: ApiService(client: http.Client()));
       final fetched = await api.getMyAnnouncements(widget.user.id);
 
-      // جلب معلومات المتاجر لكل إعلان
       final storeApi = StoreApi(apiService: ApiService(client: http.Client()));
       for (var announcement in fetched) {
         if (!_storesCache.containsKey(announcement.store_id)) {
@@ -48,7 +46,7 @@ class _MyAnnouncement extends State<MyAnnouncement> {
       }
 
       setState(() {
-        _announcements = fetched;
+        _announcements = fetched.reversed.toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -66,56 +64,66 @@ class _MyAnnouncement extends State<MyAnnouncement> {
       setState(() {
         _announcements.removeAt(index);
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم حذف الإعلان بنجاح')),
+      );
     } catch (e) {
       print('خطأ في حذف الإعلان: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل حذف الإعلان: $e')),
+      );
     }
   }
+
+  Future<void> _showDeleteConfirmation(Announcement item, int index) async {
+    bool confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('تأكيد الحذف', style: style_text_titel),
+        content: Text('هل تريد حذف هذا الإعلان؟', style: style_text_normal),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('إلغاء', style: style_text_button_normal(color_main)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('تأكيد الحذف', style: style_text_button_normal_red),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _deleteAnnouncement(index, item.id);
+    }
+  }
+
 
   void _showOptionsDialog(Announcement item, int index) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('ماذا تريد؟',style: style_text_normal,),
+        title: Text('ماذا تريد؟', style: style_text_normal),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // غلق الـDialog
-              // التوجه لواجهة تعديل الإعلان
+              Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => EditAnnouncement(announcement: item, user: widget.user,),
+                  builder: (_) => EditAnnouncement(announcement: item, user: widget.user),
                 ),
               );
             },
-            child: Text('تعديل',style: style_text_button_normal,),
+            child: Text('تعديل', style: style_text_button_normal(color_main)),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // غلق الـDialog
-              // تأكيد الحذف
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text('تأكيد الحذف',style: style_text_titel,),
-                  content: Text('هل أنت متأكد من حذف الإعلان؟',style: style_text_normal,),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context), // إلغاء
-                      child: Text('إلغاء',style: style_text_button_normal,),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        Navigator.pop(context); // غلق تأكيد الحذف
-                        await _deleteAnnouncement(index, item.id);
-                      },
-                      child: Text('حذف',style: style_text_button_normal_red,),
-                    ),
-                  ],
-                ),
-              );
+              Navigator.pop(context);
+              _showDeleteConfirmation(item, index);
             },
-            child: Text('حذف',style: style_text_button_normal_red),
+            child: Text('حذف', style: style_text_button_normal_red),
           ),
         ],
       ),
@@ -124,6 +132,10 @@ class _MyAnnouncement extends State<MyAnnouncement> {
 
   @override
   Widget build(BuildContext context) {
+    // تحديد عدد الأعمدة بناءً على عرض الشاشة
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth > 1200 ? 2 : 1;
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -141,7 +153,13 @@ class _MyAnnouncement extends State<MyAnnouncement> {
                   ? Center(child: CircularProgressIndicator())
                   : _announcements.isEmpty
                   ? Center(child: Text('لا توجد إعلانات حالياً'))
-                  : ListView.builder(
+                  : GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 2.5, // النسبة التي تريدها
+                ),
                 itemCount: _announcements.length,
                 itemBuilder: (context, index) {
                   final item = _announcements[index];
@@ -150,34 +168,44 @@ class _MyAnnouncement extends State<MyAnnouncement> {
                   return GestureDetector(
                     onTap: () => _showOptionsDialog(item, index),
                     child: Card(
-                      margin: EdgeInsets.only(bottom: 16),
+                      margin: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: Stack(
                         children: [
+                          // صورة الإعلان
                           Container(
-                            height: 180,
+                            height: double.infinity,
+                            width: double.infinity,
                             decoration: BoxDecoration(
                               image: DecorationImage(
                                 image: NetworkImage(item.announcement_photo),
                                 fit: BoxFit.cover,
                               ),
                             ),
+                          ),
+
+                          // التدرج في الجزء السفلي فقط
+                          Align(
+                            alignment: Alignment.bottomCenter,
                             child: Container(
+                              height: 150, // ارتفاع التدرج كما تريد
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                   colors: [
                                     Colors.transparent,
-                                    Colors.black.withOpacity(0.7),
+                                    Colors.black.withOpacity(0.9),
                                   ],
                                 ),
                               ),
                             ),
                           ),
+
+                          // المحتوى في الجزء السفلي
                           Positioned(
                             bottom: 12,
                             right: 12,
@@ -185,6 +213,7 @@ class _MyAnnouncement extends State<MyAnnouncement> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // معلومات المتجر
                                 Directionality(
                                   textDirection: TextDirection.rtl,
                                   child: Row(

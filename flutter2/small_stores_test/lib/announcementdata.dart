@@ -46,11 +46,11 @@ class _AnnouncementData extends State<AnnouncementData> with SingleTickerProvide
                 Tab(text: 'كل الإعلانات'),
                 Tab(text: 'إعلاناتي'),
               ],
-              indicator: tabBarTheme.indicator,
+             /* indicator: tabBarTheme.indicator,
               labelColor: tabBarTheme.labelColor,
               unselectedLabelColor: tabBarTheme.unselectedLabelColor,
               labelStyle: tabBarTheme.labelStyle,
-              unselectedLabelStyle: tabBarTheme.unselectedLabelStyle,
+              unselectedLabelStyle: tabBarTheme.unselectedLabelStyle,*/
             ),
           ),
           Expanded(

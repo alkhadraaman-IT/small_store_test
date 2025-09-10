@@ -60,7 +60,7 @@ class _Favorite extends State<Favorite> {
 
       setState(() {
         _favoriteProducts = products;
-        _filteredFavorites = List.from(products); // أول مرة نفس القائمة
+        _filteredFavorites = List.from(products);
         _isLoading = false;
       });
     } catch (e) {
@@ -75,9 +75,35 @@ class _Favorite extends State<Favorite> {
     setState(() {
       _filteredFavorites = _favoriteProducts.where((item) {
         final product = item['product'] as ProductModel;
-        return product.product_name.contains(query);
+        return product.product_name.toLowerCase().contains(query.toLowerCase());
       }).toList();
     });
+  }
+
+  // دالة لتحديد عدد الأعمدة بناءً على حجم الشاشة
+  int _getCrossAxisCount(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) {
+      return 4; // شاشات كبيرة جداً
+    } else if (width > 800) {
+      return 3; // أجهزة لوحية
+    } else if (width > 600) {
+      return 2; // أجهزة لوحية صغيرة
+    } else {
+      return 2; // هواتف
+    }
+  }
+
+  // دالة لتحديد نسبة العرض إلى الارتفاع للعناصر
+  double _getChildAspectRatio(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width > 1200) {
+      return 0.8; // شاشات كبيرة
+    } else if (width > 800) {
+      return 0.9; // أجهزة لوحية
+    } else {
+      return 0.75; // هواتف
+    }
   }
 
   @override
@@ -85,129 +111,155 @@ class _Favorite extends State<Favorite> {
     return Scaffold(
       appBar: CustomAppBar(),
       drawer: CustomDrawer(user: widget.user),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              // حقل البحث
-              TextFormField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  labelText: a_product_name_s,
-                  suffixIcon: Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(32)),
-                    borderSide: BorderSide(
-                      color: Colors.grey,
-                      width: 2,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(constraints.maxWidth > 600 ? 24.0 : 16.0),
+              child: Column(
+                children: [
+                  // حقل البحث
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: TextFormField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        labelText: a_product_name_s,
+                        suffixIcon: Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(32)),
+                          borderSide: BorderSide(
+                            color: Colors.grey,
+                            width: 2,
+                          ),
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: constraints.maxWidth > 600 ? 16.0 : 12.0,
+                          horizontal: 16.0,
+                        ),
+                      ),
+                      keyboardType: TextInputType.name,
+                      onChanged: _applyFilter,
                     ),
                   ),
-                ),
-                keyboardType: TextInputType.name,
-                onChanged: _applyFilter,
-              ),
 
-              SizedBox(height: 16),
+                  SizedBox(height: constraints.maxWidth > 600 ? 24.0 : 16.0),
 
-              // العنوان الرئيسي
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    a_favort_s,
-                    style: style_text_titel,
+                  // العنوان الرئيسي
+                  Padding(
+                    padding: EdgeInsets.all(constraints.maxWidth > 600 ? 16.0 : 8.0),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        a_favort_s,
+                        style: style_text_titel.copyWith(
+                          fontSize: constraints.maxWidth > 600 ? 24.0 : 20.0,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
 
-              SizedBox(height: 16),
+                  SizedBox(height: constraints.maxWidth > 600 ? 24.0 : 16.0),
 
-              // شبكة المنتجات المفضلة
-              Expanded(
-                child: _isLoading
-                    ? Center(child: CircularProgressIndicator())
-                    : _filteredFavorites.isEmpty
-                    ? Center(child: Text('لا يوجد منتجات مفضلة'))
-                    : GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  children: _filteredFavorites.map((item) {
-                    final product = item['product'] as ProductModel;
-                    final favorite = item['favorite'] as Favorit;
+                  // شبكة المنتجات المفضلة
+                  Expanded(
+                    child: _isLoading
+                        ? Center(child: CircularProgressIndicator())
+                        : _filteredFavorites.isEmpty
+                        ? Center(
+                      child: Text(
+                        'لا يوجد منتجات مفضلة',
+                        style: TextStyle(
+                          fontSize: constraints.maxWidth > 600 ? 18.0 : 16.0,
+                        ),
+                      ),
+                    )
+                        : GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: _getCrossAxisCount(context),
+                        crossAxisSpacing: constraints.maxWidth > 600 ? 24.0 : 16.0,
+                        mainAxisSpacing: constraints.maxWidth > 600 ? 24.0 : 16.0,
+                        childAspectRatio:1.2
+                        //_getChildAspectRatio(context),
+                      ),
+                      itemCount: _filteredFavorites.length,
+                      itemBuilder: (context, index) {
+                        final item = _filteredFavorites[index];
+                        final product = item['product'] as ProductModel;
+                        final favorite = item['favorite'] as Favorit;
 
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ShowProduct(
-                              product_id: product.id,
-                              user: widget.user,
-                              favorite_id: favorite.id,
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ShowProduct(
+                                  product_id: product.id,
+                                  user: widget.user,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Stack(
+                              children: [
+                                // صورة المنتج
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    image: DecorationImage(
+                                      image: NetworkImage(product.product_photo_1),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                // تدرج
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.6),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // اسم المنتج
+                                Padding(
+                                  padding: EdgeInsets.all(constraints.maxWidth > 600 ? 12.0 : 8.0),
+                                  child: Align(
+                                    alignment: Alignment.bottomRight,
+                                    child: Text(
+                                      product.product_name,
+                                      style: style_text_normal_w.copyWith(
+                                        fontSize: constraints.maxWidth > 600 ? 16.0 : 14.0,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         );
                       },
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Stack(
-                          children: [
-                            // صورة المنتج
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: NetworkImage(product.product_photo_1),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            // تدرج
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.6),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            // اسم
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.bottomRight,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(product.product_name,
-                                        style: style_text_normal_w),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -87,7 +87,7 @@ class _Advice extends State<Advice> {
                       // النص الرئيسي (النصيحة)
                       Text(
                         currentTip["text"] ?? "",
-                        style: style_text_big_2,
+                        style: style_text_big_2(color_main),
                         textAlign: TextAlign.right, // مهم جداً للعربي
                         textDirection: TextDirection.rtl, // لضبط اتجاه النص
                       ),

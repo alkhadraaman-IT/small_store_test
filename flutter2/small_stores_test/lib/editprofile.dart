@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -33,13 +36,29 @@ class _EditProfile extends State<EditProfile> {
 
   final _formKey = GlobalKey<FormState>(); // ✅ مفتاح الـ Form
 
-  final ImagePicker _picker = ImagePicker();
+  // متغيرات لتخزين الصورة
+  File? _pickedImageFile;       // موبايل
+  Uint8List? _pickedImageBytes; // ويب
+
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
     if (pickedFile != null) {
-      setState(() {
-        _photoController.text = pickedFile.path;
-      });
+      if (kIsWeb) {
+        // على الويب منحوّلها لـ Bytes
+        final bytes = await pickedFile.readAsBytes();
+        setState(() {
+          _pickedImageBytes = bytes;
+          _photoController.text = pickedFile.name; // بس عرض الاسم
+        });
+      } else {
+        // على الموبايل منخزّنها كـ File
+        setState(() {
+          _pickedImageFile = File(pickedFile.path);
+          _photoController.text = pickedFile.path;
+        });
+      }
     }
   }
 
@@ -80,7 +99,7 @@ class _EditProfile extends State<EditProfile> {
                   key: _formKey,
                   child: Column(
                       children: [
-                        image_login,
+                        image_logo_b,
                         SizedBox(height: 16),
                         Text(a_edit_profile_s,style: style_text_titel),
                         SizedBox(height: 16),
@@ -112,7 +131,7 @@ class _EditProfile extends State<EditProfile> {
                             }
                             return null;
                           },
-                        ),
+                        ),*/
                         SizedBox(height: 16),
                         TextFormField(
                           controller: _emailController,
@@ -131,8 +150,9 @@ class _EditProfile extends State<EditProfile> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                       /* SizedBox(height: 16),
                         TextFormField(
+                          readOnly: true, // يجعل الحقل غير قابل للتعديل
                           controller: _passWordController,
                           decoration: InputDecoration(
                             labelText: a_password_l,
@@ -176,6 +196,15 @@ class _EditProfile extends State<EditProfile> {
                             }
                             return null;
                           },
+                          onChanged: (value) {
+                            // إزالة الصفر الأول تلقائيًا إذا تم إدخاله
+                            if (value.startsWith('0')) {
+                              _phoneController.text = value.substring(1);
+                              _phoneController.selection = TextSelection.fromPosition(
+                                TextPosition(offset: _phoneController.text.length),
+                              );
+                            }
+                          },
                         ),
                         /* SizedBox(height: 16),
                 TextFormField(
@@ -214,16 +243,16 @@ class _EditProfile extends State<EditProfile> {
                             ),
                             SizedBox(width: 8),
                             ElevatedButton(
-                              style: style_button,
+                              style: styleButton(color_main),
                               onPressed: _pickImage,
-                              child: Text(a_add_b),
+                              child: Text(a_edit_b),
                             ),
                           ],
                         ),
                         SizedBox(height: 16),
                         SizedBox(
                             width: MediaQuery.of(context).size.width / 3,
-                            child: ElevatedButton(style: style_button,onPressed: () async {
+                            child: ElevatedButton(style: styleButton(color_main),onPressed: () async {
                               if (_formKey.currentState!.validate()) {
                                 try {
                                   final apiService = ApiService(client: http.Client());
@@ -244,16 +273,26 @@ class _EditProfile extends State<EditProfile> {
                                   print("type: ${widget.user.type}");
                                   print("status: ${widget.user.status}");
 
-                                  await userApi.updateUser(widget.user.id, updatedUser);
+                                  await userApi.updateUser(
+                                    id: widget.user.id,
+                                    name: _firstNameController.text,
+                                    email: _emailController.text,
+                                    phone: _phoneController.text,
+                                    type: widget.user.type,
+                                    status: widget.user.status,
+                                    profilePhoto: _pickedImageFile,     // موبايل
+                                    profileBytes: _pickedImageBytes,    // ويب
+                                  );
 
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text('تم تعديل الحساب بنجاح')),
                                   );
+                                  Navigator.pop(context);
 
-                                  Navigator.pushReplacement(
+                                 /* Navigator.pushReplacement(
                                     context,
                                     MaterialPageRoute(builder: (context) => Profile(user: widget.user,)),
-                                  );
+                                  );*/
                                 } catch (e) {
                                   print('خطأ أثناء تعديل المستخدم: $e');
                                   ScaffoldMessenger.of(context).showSnackBar(

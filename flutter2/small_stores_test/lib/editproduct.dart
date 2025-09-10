@@ -16,19 +16,22 @@ import 'style.dart';
 import 'variables.dart';
 
 class EditProduct extends StatefulWidget {
-  final User user; // إضافة المتغير
-  final ProductModel product; // إضافة بارامتر للمنتج
+  final User user;
+  final ProductModel product;
   final int class_id;
 
-  const EditProduct({Key? key, required this.product, required this.user,required this.class_id}) : super(key: key);
-
+  const EditProduct({
+    Key? key,
+    required this.product,
+    required this.user,
+    required this.class_id,
+  }) : super(key: key);
 
   @override
   _EditProduct createState() => _EditProduct();
 }
 
 class _EditProduct extends State<EditProduct> {
-
   final TextEditingController _productNameController = TextEditingController();
   final TextEditingController _productPriceController = TextEditingController();
   final TextEditingController _productNoteController = TextEditingController();
@@ -61,18 +64,37 @@ class _EditProduct extends State<EditProduct> {
       _productNoteController.text = widget.product.product_description;
       _productAvailable = widget.product.product_available == 1;
       _productImageController.text = widget.product.product_photo_1;
-      _isLoading = false;  // هنا!!
+      _isLoading = false;
     });
   }
 
+  Uint8List? _productImageBytes; // إضافة متغير لتخزين bytes الصورة
+
+  //final ImagePicker _picker = ImagePicker();
+
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50, // تقليل الجودة
+      maxWidth: 800,    // تحديد العرض الأقصى
+      maxHeight: 800,   // تحديد الطول الأقصى
+    );
+
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      if (bytes.length > 4 * 1024 * 1024) { // 4MB كحد أقصى
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("حجم الصورة كبير جداً"))
+        );
+        return;
+      }
       setState(() {
-        _productImageController.text = pickedFile.path;
+        _productImageBytes = bytes;
+        _productImageController.text = pickedFile.name;
       });
     }
   }
+
 
   @override
   void dispose() {
@@ -91,7 +113,7 @@ class _EditProduct extends State<EditProduct> {
 
     return Scaffold(
       appBar: CustomAppBar(),
-      drawer: CustomDrawer(user: widget.user,),
+      drawer: CustomDrawer(user: widget.user),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -135,10 +157,10 @@ class _EditProduct extends State<EditProduct> {
                   return null;
                 },
               ),
-
-              SizedBox(height: 16),
+              SizedBox(height: 8),
               TextFormField(
                 controller: _productNoteController,
+                maxLength: 255,
                 decoration: InputDecoration(
                   labelText: a_product_note_s,
                   prefixIcon: Icon(Icons.sticky_note_2_rounded),
@@ -154,22 +176,36 @@ class _EditProduct extends State<EditProduct> {
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [
-                  LengthLimitingTextInputFormatter(25),
-                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(25), // تحديد عدد المحارف
+                  FilteringTextInputFormatter.deny(RegExp(r'[a-z]')), // يمنع الأرقام
                 ],
-                validator: (value) => value == null || value.isEmpty ? a_phone_m : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return a_phone_m;
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 16),
-              CheckboxListTile(
-                title: Text(a_product_stati_s),
+              SwitchListTile(
+                title: Text(
+                  a_product_stati_s,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 value: _productAvailable,
-                onChanged: (val) {
+                onChanged: (bool value) {
                   setState(() {
-                    _productAvailable = val ?? false;
+                    _productAvailable = value;
                   });
                 },
-                controlAffinity: ListTileControlAffinity.leading,
+                activeColor: color_main, // لون عندما يكون في حالة "on"
+                inactiveTrackColor: Colors.grey[300], // لون المسار عندما يكون في حالة "off"
+                contentPadding: EdgeInsets.only(left: 8), // تعديل المسافة
               ),
+
               SizedBox(height: 16),
               Row(
                 children: [
@@ -178,46 +214,63 @@ class _EditProduct extends State<EditProduct> {
                       controller: _productImageController,
                       readOnly: true,
                       decoration: InputDecoration(
-                        labelText: a_store_class_s,
+                        labelText: a_product_logo_s,
                         prefixIcon: Icon(Icons.image),
                       ),
-                      validator: (value) => value == null || value.isEmpty ? a_store_logo_m : null,
+                      keyboardType: TextInputType.name,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return a_store_logo_m;
+                        }
+                        return null;
+                      },
                     ),
                   ),
                   SizedBox(width: 8),
                   ElevatedButton(
-                    style: style_button,
+                    style: styleButton(color_main),
                     onPressed: _pickImage,
-                    child: Text(a_add_b),
+                    child: Text(a_edit_b),
                   ),
                 ],
               ),
+              /*// بعد حقل اختيار الصورة
+              if (_productImageBytes != null)
+                Container(
+                  margin: EdgeInsets.only(top: 10),
+                  height: 100,
+                  width: 100,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Image.memory(_productImageBytes!, fit: BoxFit.cover),
+                )
+              else
+                Text(
+                  "لم يتم اختيار صورة",
+                  style: TextStyle(color: Colors.red),
+                ),*/
               SizedBox(height: 16),
               SizedBox(
                 width: MediaQuery.of(context).size.width / 3,
                 child: ElevatedButton(
-                  style: style_button,
+                  style: styleButton(color_main),
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
                       try {
-                        final updatedProduct = ProductModel(
-                          id: widget.product.id,
+                        await ProductApi(apiService: ApiService(client: http.Client())).updateProduct(
+                          widget.product.id,
                           store_id: widget.product.store_id,
                           product_name: _productNameController.text,
                           type_id: _selectedType!.id,
                           product_description: _productNoteController.text,
-                          product_price: double.parse(_productPriceController.text),
+                          product_price: _productPriceController.text,
                           product_available: _productAvailable ? 1 : 0,
                           product_state: widget.product.product_state,
-                          product_photo_1: _productImageController.text,
-                          product_photo_2: widget.product.product_photo_2,
-                          product_photo_3: widget.product.product_photo_3,
-                          product_photo_4: widget.product.product_photo_4,
+                          // مرّرها فقط إذا في صورة جديدة
+                          product_photo_bytes_1: _productImageBytes, // ممكن تكون null -> ما تنرسل
                         );
-                        print(updatedProduct.toJson());
-
-                        await ProductApi(apiService: ApiService(client: http.Client()))
-                            .updateProduct(updatedProduct.id, updatedProduct);
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('تم تحديث المنتج بنجاح')),
@@ -230,7 +283,6 @@ class _EditProduct extends State<EditProduct> {
                       }
                     }
                   },
-
                   child: Text(a_edit_b),
                 ),
               ),

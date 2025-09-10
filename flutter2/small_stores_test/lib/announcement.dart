@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:small_stores_test/store.dart';
 import 'package:small_stores_test/variables.dart';
 import 'apiService/api_service.dart';
 import 'apiService/announcement_api.dart';
-import 'apiService/store_api.dart'; // تأكد من استيراد StoreApi
+import 'apiService/store_api.dart';
 import 'models/announcementmodel.dart';
 import 'models/storemodel.dart';
 import 'models/usermodel.dart';
 import 'showstoredata.dart';
-import 'style.dart'; // تأكد من استيراد StoreModel
+import 'style.dart';
 
 class AnnouncementScreen extends StatefulWidget {
   final User user;
@@ -21,9 +20,8 @@ class AnnouncementScreen extends StatefulWidget {
 }
 
 class _AnnouncementScreen extends State<AnnouncementScreen> {
-  final _formKey = GlobalKey<FormState>();
   List<Announcement> _announcements = [];
-  Map<int, StoreModel> _storesCache = {}; // ذاكرة تخزين مؤقت لمعلومات المتاجر
+  Map<int, StoreModel> _storesCache = {};
   bool _isLoading = true;
 
   @override
@@ -37,7 +35,6 @@ class _AnnouncementScreen extends State<AnnouncementScreen> {
       final api = AnnouncementApi(apiService: ApiService(client: http.Client()));
       final fetched = await api.getAnnouncements();
 
-      // جلب معلومات المتاجر لكل إعلان
       final storeApi = StoreApi(apiService: ApiService(client: http.Client()));
       for (var announcement in fetched) {
         if (!_storesCache.containsKey(announcement.store_id)) {
@@ -47,7 +44,7 @@ class _AnnouncementScreen extends State<AnnouncementScreen> {
       }
 
       setState(() {
-        _announcements = fetched;
+        _announcements = fetched.reversed.toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -60,6 +57,10 @@ class _AnnouncementScreen extends State<AnnouncementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // تحديد عدد الأعمدة بناءً على عرض الشاشة
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth > 1200 ? 2 : 1;
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -77,111 +78,131 @@ class _AnnouncementScreen extends State<AnnouncementScreen> {
                   ? Center(child: CircularProgressIndicator())
                   : _announcements.isEmpty
                   ? Center(child: Text('لا توجد إعلانات حالياً'))
-                  : ListView.builder(
+                  : GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 2.5, // نسبة أفضل للبطاقات
+                ),
                 itemCount: _announcements.length,
                 itemBuilder: (context, index) {
                   final item = _announcements[index];
                   final store = _storesCache[item.store_id];
 
-                  return Card(
-                    margin: EdgeInsets.only(bottom: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Stack(
-                      children: [
-                        // الخلفية - صورة الإعلان مع تدرج
-                        Container(
-                          height: 180,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: NetworkImage(item.announcement_photo),
-                              fit: BoxFit.cover,
+                  return GestureDetector(
+                    onTap: () {
+                      final clickedStore = store;
+                      if (clickedStore != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ShowStoreData(
+                              store: clickedStore,
+                              user: widget.user,
                             ),
                           ),
-                          child: Container(
+                        );
+                      }
+                    },
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        children: [
+                          // صورة الإعلان (تملأ البطاقة بالكامل)
+                          Container(
+                            width: double.infinity,
+                            height: double.infinity,
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.7),
-                                ],
+                              image: DecorationImage(
+                                image: NetworkImage(item.announcement_photo),
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                        ),
-                        // المحتوى في الأسفل
-                        Positioned(
-                          bottom: 12,
-                          right: 12,
-                          left: 12,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Directionality(
-                                textDirection: TextDirection.rtl,
-                                child: Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        final clickedStore = store; // المتجر الذي ضغط عليه المستخدم
-                                        if (clickedStore != null) {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => ShowStoreData(
-                                                store: clickedStore,
-                                                user: widget.user,
-                                              ),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      child: CircleAvatar(
-                                        backgroundImage: store != null && store.store_photo.isNotEmpty
-                                            ? NetworkImage(store.store_photo)
-                                            : AssetImage('assets/images/logo.png') as ImageProvider,
-                                        radius: 16,
-                                      ),
-                                    ),
 
+                          // التدرج الشفاف في الجزء السفلي فقط
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              height: 150, // ارتفاع منطقة التدرج والمحتوى
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.9),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // المحتوى في الجزء السفلي فقط
+                          Positioned(
+                            bottom: 12,
+                            left: 12,
+                            right: 12,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // معلومات المتجر
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundImage: store != null && store.store_photo.isNotEmpty
+                                          ? NetworkImage(store.store_photo)
+                                          : AssetImage('assets/images/logo.png') as ImageProvider,
+                                      radius: 16,
+                                    ),
                                     SizedBox(width: 8),
-                                    Text(
-                                      store?.store_name ?? 'متجر ${item.store_id}',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                    Expanded(
+                                      child: Text(
+                                        store?.store_name ?? 'متجر ${item.store_id}',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                item.announcement_description,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+                                SizedBox(height: 8),
+
+                                // وصف الإعلان
+                                Text(
+                                  item.announcement_description,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.right,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                textAlign: TextAlign.right,
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                item.announcement_date,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
+                                SizedBox(height: 4),
+
+                                // تاريخ الإعلان
+                                Text(
+                                  item.announcement_date,
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.right,
                                 ),
-                                textAlign: TextAlign.right,
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

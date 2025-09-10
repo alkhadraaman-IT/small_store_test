@@ -6,6 +6,7 @@ import 'apiService/api_service.dart';
 import 'apiService/user_api.dart';
 import 'appbar.dart';
 import 'drawer.dart';
+import 'main.dart';
 import 'models/usermodel.dart';
 import 'style.dart';
 import 'variables.dart';
@@ -22,6 +23,25 @@ class Profile extends StatefulWidget {
 class _Profile extends State<Profile> {
   User? _user;
 
+  final List<Color> colors = [
+    Color(0xFFFFBC04), // برتقالي
+    Color(0xFF073934),
+    Colors.pink,
+    Colors.grey,
+    Colors.black,
+    Color(0xFFC3FBBB),
+    Color(0xFFFDA0E0),
+    Color(0xFF9F5F8E),
+    Color(0xFF088C91),
+  ];
+  @override
+  void initState() {
+    super.initState();
+    loadColor().then((_) {
+      setState(() {}); // لتحديث الواجهة بعد تحميل اللون
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +49,9 @@ class _Profile extends State<Profile> {
       drawer: CustomDrawer(user: widget.user,), // اختياري
       body: SingleChildScrollView(
         child: Center(
-          child: ProfileBody(
+          child: Column(
+            children: [
+           ProfileBody(
             user_id: widget.user.id, // ✅ مرر اليوزر آي دي
             onUserLoaded: (user) {
               setState(() {
@@ -37,8 +59,41 @@ class _Profile extends State<Profile> {
               });
             },
           ),
+              Text('لون التطبيق', style: style_text_titel),
+              SizedBox(height: 16),
+              GridView.count(
+                crossAxisCount: 6,
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                childAspectRatio: 1, // يخلي كل خانة مربعة
+                children: colors.map((c) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        color_main = c;
+                        saveColor(c);
+                      });
+                      (context.findAncestorStateOfType<MyAppState>())?.updateTheme();
+                    },
+                    child: Center( // يحافظ على الحجم
+                      child: Container(
+                        width: 60,   // حجم ثابت
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: c,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: color_main == c ? color_Secondary : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
 
-        ),
+            ])),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -78,6 +133,7 @@ class _ProfileBodyState extends State<ProfileBody> {
   late User _user;
   bool _isLoading = true;
 
+
   @override
   void initState() {
     super.initState();
@@ -87,69 +143,54 @@ class _ProfileBodyState extends State<ProfileBody> {
   Future<void> fetchUserProfile() async {
     try {
       final userApi = UserApi(apiService: ApiService(client: http.Client()));
-      final user_id = widget.user_id; // ✅ استخدم ID الممرر
-      final fetchedUser = await userApi.getUser(user_id);
+      final fetchedUser = await userApi.getUser(widget.user_id);
 
       setState(() {
         _user = fetchedUser;
         _isLoading = false;
       });
 
-      // ✅ أرسل بيانات المستخدم إلى الأب (Profile)
       if (widget.onUserLoaded != null) {
         widget.onUserLoaded!(_user);
       }
-
     } catch (e) {
       print('خطأ في جلب بيانات المستخدم: $e');
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
-    }
+    if (_isLoading) return Center(child: CircularProgressIndicator());
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start, // لمحاذاة لليمين
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12), // عدّل الرقم لتكبير/تصغير الزوايا
-            child: Image.asset(
-              _user.profile_photo ?? 'assets/images/img_3.png',
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover, // عشان الصورة تعبي الـ container
+          // معلومات المستخدم كما عندك
+          Center(
+            child: CircleAvatar(
+              radius: 70,
+              backgroundImage: _user.profile_photo != null && _user.profile_photo!.isNotEmpty
+                  ? NetworkImage(_user.profile_photo!)
+                  : AssetImage('assets/images/img_3.png') as ImageProvider,
+              backgroundColor: Colors.grey[200],
             ),
           ),
+          SizedBox(height: 32),
+          Text('الاسم: ${_user.name}', style: style_text_normal, textAlign: TextAlign.right),
+          SizedBox(height: 16),
+          Text('البريد: ${_user.email}', style: style_text_normal, textAlign: TextAlign.right),
+          SizedBox(height: 16),
+          Text('الهاتف: ${_user.phone}', style: style_text_normal, textAlign: TextAlign.right),
+          SizedBox(height: 32),
 
-          SizedBox(height: 16),
-          Text(
-            '$a_user_name_s: ${_user.name}',
-            style: style_text_normal,
-            textAlign: TextAlign.right,
-          ),
-          SizedBox(height: 16),
-          Text(
-            '$a_user_email_s: ${_user.email}',
-            style: style_text_normal,
-            textAlign: TextAlign.right,
-          ),
-          SizedBox(height: 16),
-          Text(
-            '$a_user_phone_s: ${_user.phone}',
-            style: style_text_normal,
-            textAlign: TextAlign.right,
-          ),
-          SizedBox(height: 16),
-          /*Text(//مكان السكن
-            '$a_user_plan_s: $note',
-            style: style_text_normal,
-            textAlign: TextAlign.right,
-          ),*/
+          // هنا نضيف اختيار اللون
+
         ],
       ),
     );

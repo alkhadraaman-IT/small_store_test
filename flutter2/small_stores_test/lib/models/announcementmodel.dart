@@ -17,16 +17,21 @@ class Announcement {
 
   // Factory method to convert JSON to Product object
   factory Announcement.fromJson(Map<String, dynamic> json) {
-    return Announcement(
-      id: json['id'],
-      store_id: json['store_id'],
-      announcement_description: json['announcement_description'],
-      announcement_date: json['announcement_date'],
-      announcement_state: json['announcement_state'],
-      announcement_photo: json['announcement_photo'],
+    final annData = json['data'] ?? json;
 
+    return Announcement(
+      id: annData['id'],
+      store_id: annData['store_id']is String?int.parse(annData['store_id'])
+          : annData['store_id'],
+      announcement_description: annData['announcement_description'],
+      announcement_date: annData['announcement_date'],
+      announcement_state: annData['announcement_state'] is String
+          ? int.parse(annData['announcement_state'])
+          : annData['announcement_state'],
+      announcement_photo: annData['announcement_photo'] ,
     );
   }
+
 
   Map<String, dynamic> toJson() {
     return {

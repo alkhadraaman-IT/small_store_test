@@ -29,19 +29,21 @@ class ProductModel {
 
   // Factory method to convert JSON to Product object
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    final productData = json['product'] ?? json;
+
     return ProductModel(
-      id: json['id'],
-      store_id: json['store_id'],
-      product_name: json['product_name'],
-      type_id: json['type_id'],
-      product_description: json['product_description'],
-      product_price: json['product_price'],
-      product_available: json['product_available'],
-      product_state: json['product_state'],
-      product_photo_1: json['product_photo_1'],
-      product_photo_2: json['product_photo_2'],
-      product_photo_3: json['product_photo_3'],
-      product_photo_4: json['product_photo_4'],
+      id: productData['id'],
+      store_id: int.parse(productData['store_id'].toString()), // المشكلة هنا
+      product_name: productData['product_name'],
+      type_id: int.parse(productData['type_id'].toString()), // المشكلة هنا
+      product_description: productData['product_description'] ,
+      product_price: double.tryParse(productData['product_price'].toString()) ?? 0.0,
+      product_available: productData['product_available'] ?? 1,
+      product_state: productData['product_state'] ?? 1,
+      product_photo_1: productData['product_photo_1'] ,
+      product_photo_2: productData['product_photo_2'],
+      product_photo_3: productData['product_photo_3'],
+      product_photo_4: productData['product_photo_4'],
     );
   }
 

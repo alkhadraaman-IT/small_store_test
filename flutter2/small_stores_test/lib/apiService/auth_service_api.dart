@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AuthService {
-  static const String baseUrl = 'http://yourdomain.com/api';
+  static const String baseUrl = 'http://127.0.0.1:8000/api';
 
   static Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
@@ -13,6 +13,10 @@ class AuthService {
         'password': password,
       }),
     );
+
+    // طباعة الاستجابة الكاملة
+    print('Response Status Code: ${response.statusCode}');
+    print('Response Body: ${response.body}');
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

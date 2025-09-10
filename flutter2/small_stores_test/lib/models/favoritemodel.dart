@@ -13,11 +13,13 @@ class Favorit {
 
   // Factory method to convert JSON to Product object
   factory Favorit.fromJson(Map<String, dynamic> json) {
+    final favData = json['data'] ?? json;
+
     return Favorit(
-      id: json['id'],
-      user_id : json['user_id'],
-      product_id  : json['product_id'],
-      state : json['state'],
+      id: favData['id'] ,
+      user_id: favData['user_id'] ,
+      product_id: favData['product_id'] ,
+      state: favData['state'] ?? 1, // أو 0 حسب المنطق عندك
     );
   }
 

@@ -23,17 +23,20 @@ class User {
 
   // Factory method to convert JSON to Product object
   factory User.fromJson(Map<String, dynamic> json) {
+    final userData = json.containsKey('user') ? json['user'] : json;
+    // ناخد مفتاح user
     return User(
-      id: json['id'],
-      name: json['name'],
-      phone: json['phone'].toString(),
-      email: json['email'],
-      password: json['password']?? '',
-      profile_photo: json['profile_photo']?.toString() ?? image_user_path, // تأكد أن image_user_path متغير نصي
-      type: json['type'] is int ? json['type'] : int.tryParse(json['type'].toString()) ?? 1,
-      status: json['status'] is int ? json['status'] : int.tryParse(json['status'].toString()) ?? 1,
+      id: userData['id'],
+      name: userData['name'],
+      phone: userData['phone'].toString(),
+      email: userData['email'],
+      password: '', // لأن السيرفر لا يرجع كلمة المرور
+      profile_photo: userData['profile_photo']?.toString() ?? image_user_path,
+      type: userData['type'] is int ? userData['type'] : int.tryParse(userData['type'].toString()) ?? 1,
+      status: userData['status'] is int ? userData['status'] : int.tryParse(userData['status'].toString()) ?? 1,
     );
   }
+
   Map<String, dynamic> toJson() {
     final data = {
       'id': id,

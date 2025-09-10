@@ -109,6 +109,10 @@ class _MyStoreBody extends State<MyStoreBody> {
 
   @override
   Widget build(BuildContext context) {
+    // تحديد عدد الأعمدة بناءً على عرض الشاشة
+    final screenWidth = MediaQuery.of(context).size.width;
+    final crossAxisCount = screenWidth > 1200 ? 4 : (screenWidth > 800 ? 3 : 2);
+
     return Scaffold(
       body: Center(
         child: Padding(
@@ -155,10 +159,10 @@ class _MyStoreBody extends State<MyStoreBody> {
                     : GridView.builder(
                   gridDelegate:
                   SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                    crossAxisCount: crossAxisCount, // استخدام القيمة الديناميكية
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 0.8,
+                    childAspectRatio: 1.2,
                   ),
                   itemCount: _filteredStores.length,
                   itemBuilder: (context, index) {
@@ -230,6 +234,8 @@ class _MyStoreBody extends State<MyStoreBody> {
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
                                   ),
                                   SizedBox(height: 4),
                                   Row(
@@ -242,11 +248,15 @@ class _MyStoreBody extends State<MyStoreBody> {
                                         size: 14,
                                       ),
                                       SizedBox(width: 4),
-                                      Text(
-                                        store.store_place,
-                                        style: style_text_normal_w
-                                            .copyWith(
-                                          fontSize: 12,
+                                      Expanded(
+                                        child: Text(
+                                          store.store_place,
+                                          style: style_text_normal_w
+                                              .copyWith(
+                                            fontSize: 12,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
                                         ),
                                       ),
                                     ],
